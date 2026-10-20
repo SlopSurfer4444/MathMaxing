@@ -1,0 +1,9 @@
+.mentor-guide { margin: 16px 0; padding: 16px 20px; background: #f0f3eb; border-radius: 16px; color: #39433a; font-size: 14px; line-height: 1.6; }
+.mentor-guide-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; font-size:12px; }
+.mentor-guide-heading span { display:flex; align-items:center; gap:8px; font-weight:600; }
+.mentor-guide button { font:inherit; cursor:pointer; }
+.mentor-guide-heading button { color:#64715e; text-decoration:underline; text-underline-offset:3px; }
+.mentor-guide p { margin:10px 0 0; }
+.mentor-guide-actions { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:12px; }
+.mentor-guide-actions > button:last-child { font-size:12px; text-decoration:underline; text-underline-offset:3px; }
+.mentor-guide p > button { margin-left:10px; text-decoration:underline; }

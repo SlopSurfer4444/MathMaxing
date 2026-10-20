@@ -1,0 +1,90 @@
+.notebook-editor .math-block {
+  background: transparent;
+  border-color: transparent;
+  padding-top: 35px;
+  padding-bottom: 9px;
+}
+.notebook-editor .math-block:focus-within {
+  background: #f8faf5;
+  border-color: #d5dfcd;
+}
+.notebook-editor .math-block__header {
+  opacity: 0;
+  pointer-events: none;
+}
+.notebook-editor .math-block:is(:hover, :focus-within) .math-block__header {
+  opacity: 1;
+  pointer-events: auto;
+}
+.notebook-editor .math-block__label { display: none; }
+.notebook-editor .math-block__header { justify-content: flex-end; height: 30px; }
+.notebook-editor .math-block__actions button { min-height: 30px; }
+.notebook-editor .math-block__annotate { font-size: 13px; }
+.notebook-editor .math-block__delete { min-width: 30px; }
+.notebook-editor .math-block__copy {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 13px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: #52634c;
+}
+.notebook-editor .math-block__copy:hover { background: #eaf0e1; }
+.notebook-editor .math-block__general-answer {
+  font-size: 13px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: #435b39;
+}
+.notebook-editor .math-block__general-answer:hover { background: #eaf0e1; }
+.notebook-editor .math-block__general-answer:disabled { opacity: .45; cursor: default; }
+.notebook-editor .math-block__palette {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.notebook-editor .math-block:focus-within .math-block__palette {
+  height: auto;
+  visibility: visible;
+  margin-top: 6px;
+}
+.notebook-editor .math-block__palette button {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #435b39;
+  background: #edf1e8;
+  font-family: Georgia, serif;
+  font-size: 16px;
+}
+.notebook-editor .math-block__palette button:hover { background: #dfe9d5; }
+.notebook-editor .math-block__palette .math-block__keyboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+.notebook-editor .math-block__palette button:focus-visible,
+.notebook-editor .math-block__actions button:focus-visible {
+  outline: 2px solid #5c804c;
+  outline-offset: 2px;
+}
+.notebook-editor .math-block math-field::part(virtual-keyboard-toggle) { visibility: visible; }
+@media (pointer: coarse) {
+  .notebook-editor .math-block__header { opacity: 1; pointer-events: auto; }
+  .notebook-editor .math-block__palette button { min-width: 44px; min-height: 44px; }
+  .notebook-editor .math-block__actions button { min-width: 44px; min-height: 44px; }
+  .notebook-editor .math-block__header { height: 44px; }
+  .notebook-editor .math-block { padding-top: 49px; }
+}
+@media (max-width: 640px) {
+  .notebook-editor .math-block__header { position: static; height: auto; margin-bottom: 6px; }
+  .notebook-editor .math-block__actions { flex-wrap: wrap; justify-content: flex-end; }
+  .notebook-editor .math-block { padding-top: 6px; }
+}
