@@ -20,8 +20,8 @@ export class OpenAITutor {
   }
   async status() {
     // Configuration is not evidence of remote access. A successful call verifies access for this process.
-    return { connected: this.verified === true && !this.closed, provider: this.provider, model: this.model,
-      ...(!this.verified ? { error: this.lastError || 'API настроен; доступ ещё не подтверждён запросом.' } : {}) }
+    return { connected: this.verified === true && !this.closed, configured: true, provider: this.provider, model: this.model,
+      ...(this.closed ? { error: 'Подключение наставника закрыто.' } : this.lastError ? { error: this.lastError } : {}) }
   }
   _reserve() {
     const day = this.now().toISOString().slice(0, 10)

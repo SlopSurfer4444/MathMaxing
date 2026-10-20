@@ -6,9 +6,11 @@ import { ArrowDown, ArrowUpRight, LoaderCircle, MessageCircle, Paperclip, Refres
 import type { ChatContext, Annotation } from '../notebook-state'
 import { MathContent, MathText } from './MathContent'
 import { materials, materialSource } from '../materials'
+import type { ProviderStatus } from '../api-types'
+import { providerPresentation } from '../provider-status'
 
 export type Message = { id: string; role: 'user' | 'assistant'; text: string; contexts: ChatContext[]; requestId: string; createdAt: string; status: 'pending' | 'sent' | 'failed'; error?: string; stale?: boolean }
-export type Provider = { connected: boolean; provider: string; model?: string; error?: string }
+export type Provider = ProviderStatus
 const countLabel = (n: number) => `${n} ${n === 1 ? 'аннотация' : n < 5 ? 'аннотации' : 'аннотаций'}`
 function useNarrowChat() {
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 900px)').matches)
@@ -115,6 +117,7 @@ export function ChatPanel({ open, onClose, provider, messages, contexts, onConte
   draftRequest?: { text: string; token: number }; draftKey?: string; onDraftConsumed?(token: number): void;
 }) {
   const [draft, setDraft] = useState(() => { try { return draftKey ? learnerStorage.getItem(draftKey) ?? '' : '' } catch { return '' } })
+  const connection = providerPresentation(provider)
   const [draftError, setDraftError] = useState(false)
   const [pending, setPending] = useState<{ text: string; contexts: ChatContext[] } | null>(null)
   const [away, setAway] = useState(false)
@@ -168,8 +171,9 @@ export function ChatPanel({ open, onClose, provider, messages, contexts, onConte
     }
   }
   return <aside className={`notes-panel chat-panel ${open ? 'is-open' : ''}`} aria-label="Чат с ИИ">
-    <header className="chat-header"><div className="notes-heading"><div><span className="tutor-avatar"><Sparkles size={20} /></span><div><h2>Разберём вместе</h2><p>Можно спросить с самого начала</p></div></div><button className="chat-return" aria-label="Закрыть чат" onClick={onClose}><span>Закрыть</span><X size={19} /></button></div><div className="connection-line"><span className={`connection-dot ${provider?.connected ? 'connected' : ''}`} /><span>{checking ? 'Проверяем связь…' : provider?.connected ? 'Наставник на связи' : 'Нет подключения'}</span><button className="icon-button" title="Проверить связь с наставником" aria-label="Проверить связь с наставником" disabled={checking} onClick={onCheck}><RefreshCw size={13} className={checking ? 'is-spinning' : ''} /></button></div></header>
-    {provider && !provider.connected && <div className="connection-warning">Наставник пока недоступен. Можно продолжать решать и пользоваться материалами. Чтобы проверить связь, нажми ↻.</div>}
+    <header className="chat-header"><div className="notes-heading"><div><span className="tutor-avatar"><Sparkles size={20} /></span><div><h2>Разберём вместе</h2><p>Можно спросить с самого начала</p></div></div><button className="chat-return" aria-label="Закрыть чат" onClick={onClose}><span>Закрыть</span><X size={19} /></button></div><div className="connection-line"><span className={`connection-dot ${connection.state === 'connected' ? 'connected' : ''}`} /><span>{checking ? 'Обновляем статус…' : connection.label}</span><button className="icon-button" title="Обновить статус наставника" aria-label="Обновить статус наставника" disabled={checking} onClick={onCheck}><RefreshCw size={13} className={checking ? 'is-spinning' : ''} /></button></div></header>
+    {connection.state === 'ready' && <p className="chat-footnote">Связь проверится при первом вопросе.</p>}
+    {connection.warning && <div className="connection-warning" role="status">{connection.warning}</div>}
     <div className="chat-scroll-area"><div className="chat-timeline" ref={scroll} role="log" aria-label="Переписка с наставником" tabIndex={0} onScroll={() => { const el=scroll.current; if(el) { pinned.current=el.scrollHeight-el.clientHeight-el.scrollTop<48; setAway(!pinned.current) } }}>
       {messages.length === 0 && !pending && <div className="chat-empty"><div className="chat-empty-icon"><MessageCircle size={25} /><span>?</span></div><h3>Что разберём?</h3><p>Можно не знать, с чего начать. Спроси своими словами или прикрепи фрагмент из тетради.</p>{['Я пока не понимаю, что такое синус', 'Помоги разобраться, с чего начать'].map(text => <button key={text} onClick={() => { setDraft(text); composer.current?.focus() }}>{text}<ArrowUpRight size={14} /></button>)}</div>}
       {messages.map(message => <article className={`chat-message is-${message.role}`} key={message.id}><div className="chat-message-meta"><strong>{message.role === 'user' ? 'Ты' : 'Наставник'}</strong><time>{new Date(message.createdAt).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}</time></div><div className="chat-bubble">{message.role === 'user' ? <><AnnotationBundle contexts={message.contexts} onLocate={onLocate} /><MathContent text={message.text} /></> : <AssistantText message={message} onLocate={onLocate} exercises={exercises} onOpenExercise={onOpenExercise} />}{message.stale && <p className="chat-stale">Ответ к прежней версии решения — запись уже изменилась.</p>}{message.status === 'failed' && <div className="chat-request-error" role="alert"><span>{message.error || 'Ответ не получен. Вопрос сохранён.'}</span><button disabled={blocked} onClick={() => onRetry(message.requestId)}><RefreshCw size={12} /> Повторить запрос</button></div>}</div></article>)}

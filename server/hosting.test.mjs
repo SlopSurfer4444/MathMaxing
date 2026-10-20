@@ -58,6 +58,32 @@ test('API contract sends text, limits, server key and store:false; no tools or S
     assert.deepEqual(answer, { text: 'Пояснение π', model: 'actual-test-model', runId: 'response-test' }); assert.equal(delta, answer.text); assert.equal(calls, 1); assert.equal((await f.tutor.status()).connected, true)
   } finally { await f.close() }
 })
+
+test('status distinguishes configured, verified, failed and restarted without probing the model', async () => {
+  let calls = 0, failRequest = false
+  const f = provider({ fetchImpl: async () => { calls++; return failRequest ? new Response('', { status: 401 }) : complete() } })
+  try {
+    const ready = { connected: false, configured: true, provider: 'OpenAI API', model: 'configured-test-model' }
+    assert.deepEqual(await f.tutor.status(), ready)
+    assert.deepEqual(await f.tutor.status(), ready)
+    assert.equal(calls, 0)
+    await f.tutor.respond({ prompt: 'q', system: 's' })
+    assert.deepEqual(await f.tutor.status(), { ...ready, connected: true })
+    failRequest = true
+    await assert.rejects(f.tutor.respond({ prompt: 'q', system: 's' }), { code: 'OPENAI_AUTH' })
+    const failed = await f.tutor.status()
+    assert.equal(failed.connected, false); assert.equal(failed.configured, true); assert.match(failed.error, /не подтверждён/)
+    assert.equal(calls, 2)
+    failRequest = false
+    await f.tutor.respond({ prompt: 'q', system: 's' })
+    assert.deepEqual(await f.tutor.status(), { ...ready, connected: true })
+    await f.tutor.close()
+    assert.equal((await f.tutor.status()).connected, false)
+    assert.match((await f.tutor.status()).error, /закрыто/)
+    const restarted = new OpenAITutor({ db: f.db, apiKey: 'test-only', model: 'configured-test-model', fetchImpl: async () => { calls++; return complete() } })
+    try { assert.deepEqual(await restarted.status(), ready); assert.equal(calls, 3) } finally { await restarted.close() }
+  } finally { await f.close() }
+})
 test('provider failure is sanitized, not retried, and consumes daily budget', async () => {
   let calls = 0; const f = provider({ requestsPerDay: 1, fetchImpl: async () => { calls++; return new Response('secret upstream details test-only-not-a-key', { status: 401 }) } })
   try {

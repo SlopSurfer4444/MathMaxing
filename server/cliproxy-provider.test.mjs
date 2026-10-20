@@ -19,6 +19,8 @@ test('explicit CLIProxy provider sends bounded tool-free Responses only to loopb
   }})
   try {
     assert.equal((await tutor.status()).connected,false)
+    assert.equal((await tutor.status()).configured,true)
+    assert.equal((await tutor.status()).error,undefined);assert.equal(calls,0)
     assert.match((await tutor.respond({system:'Наставник',prompt:'Что такое синус?'})).text,/высота/)
     assert.equal((await tutor.status()).provider,'Codex · CLIProxyAPI')
     assert.equal((await tutor.status()).connected,true);assert.equal(calls,1)

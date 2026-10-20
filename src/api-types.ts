@@ -10,6 +10,6 @@ export type Preparation = {id:string; exerciseId:string; answer:string; result?:
 export type Work = { id: string; problemId: string; mode: Mode; modeEpoch: number; revision: number; document: JSONContent; finalAnswer: string; generalAnswer?: string; messages: ChatMessage[]; submissions: Submission[]; createdAt: string; updatedAt: string; priorExposure: boolean; preparation?:Preparation; preparationHistory?:Preparation[] }
 export type Problem = { id: string; title: string; equation: string; interval: string; description: string; skills: string[] }
 export type MemoryEvent = { id: string; problemId: string; summary: string; createdAt: string; independent: boolean; submissionId: string }
-export type ProviderStatus = { connected: boolean; provider: string; model?: string; error?: string }
+export type ProviderStatus = { connected: boolean; configured?: boolean; loading?: boolean; provider: string; model?: string; error?: string }
 export type WorkSummary = Pick<Work, 'id' | 'problemId' | 'mode' | 'updatedAt'>
 export type AppState = { work: Work; works: WorkSummary[]; problems: Problem[]; exercises: PreparationExercise[]; memory: MemoryEvent[]; provider: ProviderStatus; canImportLocal?: boolean }

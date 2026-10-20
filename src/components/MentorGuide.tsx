@@ -1,13 +1,14 @@
 import { visitorHeaders } from '../visitor-session'
 import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
-import type { Work, PreparationExercise } from '../api-types'
+import type { Work, PreparationExercise, ProviderStatus } from '../api-types'
+import { providerState } from '../provider-status'
 import { MathContent } from './MathContent'
 import './mentor-guide.css'
 
 type Guidance = { text: string; revision: number; exerciseId?: string }
-export function MentorGuide({ work, saved, connected, busy, exercises, onExercise, onDiscuss, enabled, onEnabled }: {
-  work: Work; saved: boolean; connected: boolean; busy: boolean; exercises: PreparationExercise[];
+export function MentorGuide({ work, saved, provider, busy, exercises, onExercise, onDiscuss, enabled, onEnabled }: {
+  work: Work; saved: boolean; provider: ProviderStatus | null; busy: boolean; exercises: PreparationExercise[];
   onExercise(id: string): void; onDiscuss(text: string): void;
   enabled: boolean; onEnabled(value: boolean): void;
 }) {
@@ -15,6 +16,8 @@ export function MentorGuide({ work, saved, connected, busy, exercises, onExercis
   const [result, setResult] = useState<{ key: string; guidance: Guidance } | null>(null)
   const [status, setStatus] = useState<'idle' | 'thinking' | 'error'>('idle')
   const key = `${work.id}:${work.modeEpoch}:${work.revision}`
+  const connection = providerState(provider)
+  const connected = connection === 'connected'
   const eligible = enabled && saved && connected && !busy
   useEffect(() => {
     setStatus('idle')
@@ -43,7 +46,7 @@ export function MentorGuide({ work, saved, connected, busy, exercises, onExercis
   const exercise = exercises.find(item => item.id === current?.exerciseId)
   return <section className="mentor-guide" aria-label="Следующий шаг с наставником">
     <div className="mentor-guide-heading"><span><Sparkles size={15} />Наставник рядом</span><button onClick={() => onEnabled(!enabled)} aria-pressed={enabled}>{enabled ? 'Пока сам' : 'Предлагать помощь'}</button></div>
-    {!enabled ? <p>Продолжай в своём темпе. Подсказки на паузе.</p> : !connected ? <p>Подключи наставника в чате, чтобы он помогал по ходу решения.</p> : current ? <>
+    {!enabled ? <p>Продолжай в своём темпе. Подсказки на паузе.</p> : !connected ? <p>{connection === 'ready' ? 'Задай первый вопрос в чате. После ответа наставник сможет помогать по ходу решения.' : connection === 'loading' ? 'Уточняем статус наставника…' : 'Наставник сейчас недоступен. Можно продолжать решать и пользоваться материалами.'}</p> : current ? <>
       <div aria-live="polite"><MathContent text={current.text} /></div>
       <div className="mentor-guide-actions">{exercise && <button className="outline-button" disabled={busy} onClick={() => onExercise(exercise.id)}>Потренировать: {exercise.title}</button>}<button disabled={busy} onClick={() => onDiscuss(current.text)}>Обсудить с наставником</button></div>
     </> : <p role="status">{status === 'thinking' ? 'Смотрю на твой ход мысли…' : status === 'error' ? 'Сейчас не удалось получить подсказку. Можно продолжать решать.' : 'Пиши, как рассуждаешь. После паузы предложу следующий шаг.'}{status === 'error' && <button onClick={() => setRetry(value => value + 1)}>Повторить</button>}</p>}
