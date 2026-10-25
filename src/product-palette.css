@@ -1,0 +1,69 @@
+/* Brand and semantic colours have separate jobs. Keep writing surfaces opaque. */
+:root {
+  --product-canvas: #f6f4ef;
+  --product-paper: #fffefa;
+  --product-ink: #202735;
+  --product-muted: #626b7a;
+  --product-action: #3155d9;
+  --product-action-hover: #2847b8;
+  --product-action-soft: #edf0fc;
+  --product-line: #dde0e6;
+  --product-apricot: #f2b38d;
+  --ink: var(--product-ink);
+  --muted: var(--product-muted);
+  --border: var(--product-line);
+  background: var(--product-canvas);
+  color: var(--product-ink);
+}
+
+body, .workspace-sidebar { background: var(--product-canvas); }
+.mathmaxing-app :is(.study-home, .learning-route, .percentage-work, .paper, .chat-panel) { color: var(--product-ink); }
+.mathmaxing-app :is(.study-heading h1, .learning-route-current h2, .study-current h2, .task-title, .percentage-work h1, .adaptive-help-heading h3) { color: var(--product-ink); }
+.mathmaxing-app :is(.percentage-work, .paper, .learning-route-current, .study-current) { background: var(--product-paper); }
+.mathmaxing-app :is(.learning-route-current p, .percentage-prompt, .adaptive-help-copy, .adaptive-help-question, .percentage-writing textarea) { color: var(--product-ink); }
+.mathmaxing-app :is(.learning-route-next-copy > span, .study-label, .percentage-hint, .adaptive-help-preview, .adaptive-help-status) { color: var(--product-muted); }
+
+.mathmaxing-app :is(.primary-button, .study-primary, .adaptive-help-send, .chat-send) {
+  color: #fff;
+  background: var(--product-action);
+  border-color: var(--product-action);
+}
+.mathmaxing-app :is(.primary-button, .study-primary, .adaptive-help-send, .chat-send):hover:not(:disabled) {
+  color: #fff;
+  background: var(--product-action-hover);
+  border-color: var(--product-action-hover);
+}
+.mathmaxing-app .percentage-work .primary-button { background: var(--product-action); }
+.mathmaxing-app .percentage-work .primary-button:hover:not(:disabled) { background: var(--product-action-hover); }
+.mathmaxing-app .adaptive-help .adaptive-help-send { background: var(--product-action); border-color: var(--product-action); color: #fff; }
+.mathmaxing-app .adaptive-help .adaptive-help-send:hover:not(:disabled) { background: var(--product-action-hover); border-color: var(--product-action-hover); color: #fff; }
+.mathmaxing-app :is(.outline-button, .study-secondary, .percentage-back, .floating-notes, .study-topic-symbol) { color: var(--product-action); }
+.mathmaxing-app .workspace-sidebar nav > button:hover:not([aria-current=page]) { background: #eeedf0; color: var(--product-ink); }
+.mathmaxing-app .workspace-sidebar nav > button[aria-current=page],
+.mathmaxing-app .workspace-sidebar nav > button[aria-current=page]:hover { background: var(--product-action-soft); color: var(--product-action); }
+.mathmaxing-app .brand-wordmark-formula { color: var(--product-action); }
+.mathmaxing-app :is(button, a, summary, textarea):focus-visible { outline-color: var(--product-action); }
+.mathmaxing-app :is(.percentage-writing textarea, .percentage-answer-box):focus-within { border-color: var(--product-action); box-shadow: 0 0 0 3px #3155d914; }
+.mathmaxing-app .percentage-mode { color: var(--product-muted); background: #f1f2f5; border-color: var(--product-line); }
+.mathmaxing-app .percentage-mode.is-solo { color: var(--product-ink); background: transparent; border-color: var(--product-line); }
+.mathmaxing-app .percentage-resource { background: #f1f2f5; }
+.mathmaxing-app .percentage-answer-box input { color: var(--product-ink); }
+.mathmaxing-app .chat-message.is-user .chat-bubble { background: var(--product-action-soft); color: var(--product-ink); border-color: #dce2fa; }
+.mathmaxing-app .chat-message.is-assistant .chat-bubble { background: var(--product-paper); color: var(--product-ink); }
+.mathmaxing-app .chat-panel.chat-workspace .chat-header.glass-surface { --glass-tint: rgb(250 251 255 / 76%); }
+.mathmaxing-app .sidebar-navigation-glass { --glass-tint: rgb(250 251 255 / 70%); }
+.mathmaxing-app .home-geometry-plane { fill: var(--product-action); }
+.mathmaxing-app .home-geometry-core { fill: var(--product-apricot); }
+.mathmaxing-app .home-geometry-line { stroke: var(--product-ink); }
+
+/* The small mixed-practice link is secondary to today's lesson. */
+.mathmaxing-app .study-home-side .mixed-practice-card > .study-primary { color: var(--product-action); background: transparent; border: 0; }
+.mathmaxing-app .study-home-side .mixed-practice-card > .study-primary:hover:not(:disabled) { color: var(--product-action-hover); background: transparent; }
+/* Success and error panels deliberately retain their semantic green/amber. */
+
+/* Prose follows the educational surface; MathLive retains its own glyph fonts. */
+.mathmaxing-app :is(.percentage-prompt, .percentage-preparation, .percentage-check, .percentage-example, .percentage-steps, .adaptive-help-copy, .adaptive-help-question, .adaptive-help-preview) .math-content {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}

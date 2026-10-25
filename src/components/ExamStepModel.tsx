@@ -1,0 +1,46 @@
+import {lazy,useId} from 'react'
+import {ArrowLeft,ArrowRight,Check} from 'lucide-react'
+import {evaluateDebtModel} from '../../shared/debt-model.mjs'
+import {evaluateParallelModel} from '../../shared/parallel-model.mjs'
+import type {StepModelDescriptor,StepModelState,StepModelResult} from '../../shared/step-model.mjs'
+import './ExamStepModel.css'
+const MathContent=lazy(()=>import('./MathContent').then(module=>({default:module.MathContent})))
+const money=(value:number)=>new Intl.NumberFormat('ru-RU',{maximumSignificantDigits:15}).format(value)
+type Props={descriptor:StepModelDescriptor;state:StepModelState;result?:StepModelResult;source?:{quote:string};disabled:boolean;onChange(state:StepModelState):void;onCheck():void;onReturn():void;onNext():void}
+const events=[['initial','Взяли кредит'],['interest-1','Начислили проценты'],['payment-1','Внесли платёж'],['interest-2','Начислили ещё раз'],['payment-2','Внесли такой же платёж']]
+export function ExamStepModel({descriptor,state,result,source,disabled,onChange,onCheck,onReturn,onNext}:Props){
+  const id=useId(),change=(patch:Partial<StepModelState>)=>onChange({...state,...patch})
+  const debt=descriptor.kind==='debt-two-payments'?evaluateDebtModel(descriptor.facts,state.input):null
+  const geometry=descriptor.kind==='converse-parallel'?evaluateParallelModel(descriptor.facts,state.choice):null
+  const growth=descriptor.kind==='debt-two-payments'?String(1+descriptor.facts.rate/100).replace('.','{,}'):'1'
+  const selected=debt?.outcome==='early'&&['','interest-2','payment-2'].includes(state.choice)?'payment-1':state.choice||'interest-2'
+  return <section className="step-model" aria-labelledby={`${id}-title`}>
+    <header className="step-model-heading"><span className="exam-eyebrow">На данных твоей задачи</span><h2 id={`${id}-title`}>{descriptor.title}</h2></header>
+    {source&&<details className="step-model-source"><summary>Из моей записи</summary><blockquote><MathContent text={source.quote}/></blockquote></details>}
+    {descriptor.kind==='debt-two-payments'&&<>
+      <p>Кредит — <strong>{money(descriptor.facts.principal)} ₽</strong>. Перед каждым из двух одинаковых платежей долг растёт на <strong>{descriptor.facts.rate}%</strong>. Посмотри, от какой суммы считают проценты во второй раз.</p>
+      <label className="step-model-input" htmlFor={`${id}-payment`}>Какой платёж ты предлагаешь?<span><input id={`${id}-payment`} inputMode="decimal" maxLength={120} value={state.input} disabled={disabled} onChange={event=>change({input:event.target.value})} placeholder="Сумма одного платежа"/><span>₽</span></span></label>
+      <ol className="step-model-timeline" aria-label="Два года: сначала проценты, затем платёж">
+        {events.map(([key,label],index)=>{const step=debt?.steps.find(item=>item.id===key),unavailable=debt?.outcome==='early'&&index>2;return <li key={key} className={`${key.includes('interest')?'is-interest':key.includes('payment')?'is-payment':'is-start'} ${selected===key?'is-selected':''} ${unavailable?'is-unavailable':''}`}><button type="button" disabled={disabled||unavailable} aria-pressed={selected===key} onClick={()=>change({choice:key})}><span className="step-model-event-no">{index===0?'S':key.includes('interest')?'+%':'−P'}</span><span><small>{index===0?'Начало':index<=2?'Первый год':'Второй год'}</small>{label}</span>{state.reveal>=1&&step&&<strong>{money(step.amount)} ₽</strong>}</button></li>})}
+      </ol>
+      <p className="step-model-event-detail" key={selected}>{selected==='initial'?'Это исходный долг, ещё без процентов.':selected==='interest-1'?'Первое начисление увеличивает исходный долг. Платёж ещё не внесён.':selected==='payment-1'?'Первый платёж вычитаем из уже выросшего долга. Дальше проценты будут только на остаток.':selected==='interest-2'?'Здесь важен остаток после первого платежа. Именно его увеличивают на те же проценты — не исходный кредит.':'Вычитаем такой же платёж ещё раз. По условию после этого долг должен стать нулевым.'}</p>
+      {state.reveal>=1&&debt?.outcome==='invalid'&&<p className="step-model-note">{debt.summary}</p>}
+      {state.reveal>=1&&debt?.outcome==='early'&&<p className="step-model-note">{debt.summary}</p>}
+      {state.reveal>=2&&<div className="step-model-symbols"><MathContent text={`Обозначим платёж $P$. После первого начисления и платежа остаётся\n\n$$D_1=${growth}\\cdot ${descriptor.facts.principal}-P.$$\n\nВо второй год этот остаток снова растёт. Чтобы после второго платежа долг стал нулевым, нужно\n\n$$${growth}D_1-P=0.$$\n\nПодставляем остаток первого года:\n\n$$${growth}(${growth}\\cdot ${descriptor.facts.principal}-P)-P=0.$$\n\nПри раскрытии скобок $${growth}P$ — влияние **первого платежа** на конечный долг. Сам платёж остаётся $P$. Последний $-P$ — **второй платёж**.`}/></div>}
+    </>}
+    {descriptor.kind==='converse-parallel'&&geometry&&<>
+      <p>D и E лежат внутри сторон треугольника. Параллельность DE и BC <strong>нужно доказать</strong>. Какое основание можно взять из условия?</p>
+      <div className="step-model-geometry"><svg viewBox="0 0 400 290" role="img" aria-label={`ABC — невырожденный треугольник. AD=${descriptor.facts.ad}, DB=${descriptor.facts.db}, AE=${descriptor.facts.ae}, EC=${descriptor.facts.ec}. Линии на рисунке не являются доказательством.`}>
+        <path className="step-model-outline" d="M70 30 L30 250 L360 250 Z"/>
+        {(()=>{const k=geometry.ratios.left,l=geometry.ratios.right,d=[70-40*k,30+220*k],e=[70+290*l,30+220*l];return <><path className="step-model-cut" d={`M${d} L${e}`}/><path className="step-model-segment" d={`M${d} L70 30 L${e}`}/><path className="step-model-angle" d="M64.3 61.5 A32 32 0 0 0 95.5 49.3"/><circle cx={d[0]} cy={d[1]} r="4"/><circle cx={e[0]} cy={e[1]} r="4"/><text x={d[0]-20} y={d[1]+4}>D</text><text x={e[0]+10} y={e[1]}>E</text><text x={(70+d[0])/2-25} y={(30+d[1])/2+4}>{descriptor.facts.ad}</text><text x={(d[0]+30)/2-25} y={(d[1]+250)/2+4}>{descriptor.facts.db}</text><text x={(70+e[0])/2+12} y={(30+e[1])/2-5}>{descriptor.facts.ae}</text><text x={(e[0]+360)/2+12} y={(e[1]+250)/2-5}>{descriptor.facts.ec}</text></>})()}
+        <text x="64" y="22">A</text><text x="16" y="276">B</text><text x="363" y="276">C</text>
+      </svg><div><span className="exam-eyebrow">Дано</span><p>AD = {descriptor.facts.ad}, DB = {descriptor.facts.db}<br/>AE = {descriptor.facts.ae}, EC = {descriptor.facts.ec}</p><small>Схема помогает сопоставить отрезки. Равенство проверяем по числам, а не на глаз.</small></div></div>
+      <fieldset className="step-model-choices" disabled={disabled}><legend>На что опереться?</legend>{[['sides-angle','На отношения полных сторон и общий угол A'],['parallel-angles','На равные углы из параллельности DE и BC'],['other','У меня другой способ']].map(([value,label])=><label key={value}><input name={id} type="radio" value={value} checked={state.choice===value} onChange={()=>change({choice:value})}/><span>{label}</span></label>)}</fieldset>
+      {state.reveal>=1&&<div className="step-model-ratios"><span className="exam-eyebrow">Получаем из длин</span><p>AB = {descriptor.facts.ad} + {descriptor.facts.db} = {geometry.sides.ab}<br/>AC = {descriptor.facts.ae} + {descriptor.facts.ec} = {geometry.sides.ac}</p><div><MathContent text={`$\\frac{AD}{AB}=\\frac{${descriptor.facts.ad}}{${geometry.sides.ab}}$`}/><span aria-label={geometry.parallel?'равно':'не равно'}>{geometry.parallel?'=':'≠'}</span><MathContent text={`$\\frac{AE}{AC}=\\frac{${descriptor.facts.ae}}{${geometry.sides.ac}}$`}/></div><p>Угол DAE — тот же угол A, что и BAC.</p></div>}
+      {state.reveal>=2&&<div className="step-model-symbols"><p>{geometry.parallel?'Две пары сторон пропорциональны, а угол между ними общий. Значит, ADE и ABC подобны по двум сторонам и углу между ними. Из подобия получаем ∠ADE = ∠ABC; это соответствующие углы при прямой AB. Поэтому DE ∥ BC.':'Отношения не равны. Общего угла недостаточно для этого признака подобия; прежняя цепочка не обосновывает параллельность.'}</p><p>Можно обосновать иначе. Этот разбор проверяет выбранное основание, а не всё твоё доказательство.</p></div>}
+    </>}
+    <div className="step-model-actions"><button type="button" className="exam-primary" disabled={disabled||(descriptor.kind==='debt-two-payments'?!state.input.trim():!state.choice)} onClick={onCheck}>Проверить {descriptor.kind==='debt-two-payments'?'подстановку':'основание'}<Check size={15}/></button>{state.reveal<2&&<button type="button" disabled={disabled} onClick={()=>change({reveal:state.reveal+1})}>{state.reveal===0?(descriptor.kind==='debt-two-payments'?'Показать остатки':'Сопоставить стороны'):'Почему это работает'}<ArrowRight size={15}/></button>}</div>
+    {result&&<div className={`exam-feedback is-${result.status}`} role="status"><p>{result.summary}</p><details><summary>Что проверено</summary><p>{result.scope}</p>{result.provenance==='imported-unverified'&&<p>Архивный результат не подтверждён этим сервером.</p>}</details></div>}
+    <footer><button type="button" disabled={disabled} onClick={onReturn}><ArrowLeft size={15}/>Продолжить своё решение</button><button type="button" className="exam-text" disabled={disabled} onClick={onNext}>Новый вариант самому<ArrowRight size={15}/></button></footer>
+  </section>
+}

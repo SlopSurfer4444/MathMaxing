@@ -1,0 +1,28 @@
+.explanation-transition{position:relative;isolation:isolate;min-width:0;overflow:hidden;transition:height 280ms cubic-bezier(.2,.7,.2,1)}
+.explanation-transition__measure,.explanation-transition__content{display:flow-root;min-width:0}
+.explanation-transition__scene{position:relative;isolation:isolate;min-width:0}
+.explanation-transition__content{opacity:1;filter:none}
+.explanation-transition__veil{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0}
+.explanation-transition .explanation-transition__glass{--glass-tint:rgb(251 252 255 / 38%);--glass-blur:5px;position:absolute;inset:0;border-radius:13px;pointer-events:none}
+.explanation-transition__status{font:inherit;font-size:11px;line-height:1.65;color:var(--product-muted,#6f7985);margin:0}
+.explanation-transition__status:not(:empty){margin-top:8px}
+.explanation-transition--morph-1 .explanation-transition__veil{animation:explanation-glass-arrive-a 300ms ease-out}
+.explanation-transition--morph-2 .explanation-transition__veil{animation:explanation-glass-arrive-b 300ms ease-out}
+.explanation-transition--morph-1 .explanation-transition__content{animation:explanation-copy-arrive-a 300ms ease-out}
+.explanation-transition--morph-2 .explanation-transition__content{animation:explanation-copy-arrive-b 300ms ease-out}
+@keyframes explanation-glass-arrive-a{0%{opacity:.35}25%{opacity:.5}100%{opacity:0}}
+@keyframes explanation-glass-arrive-b{0%{opacity:.35}25%{opacity:.5}100%{opacity:0}}
+@keyframes explanation-copy-arrive-a{from{opacity:.8;filter:blur(.35px)}to{opacity:1;filter:blur(0)}}
+@keyframes explanation-copy-arrive-b{from{opacity:.8;filter:blur(.35px)}to{opacity:1;filter:blur(0)}}
+:root[data-quiet-effects="true"] .explanation-transition,.quiet-effects .explanation-transition{transition:none}
+:root[data-quiet-effects="true"] .explanation-transition__content,.quiet-effects .explanation-transition__content{animation:none!important;opacity:1;filter:none}
+:root[data-quiet-effects="true"] .explanation-transition__veil,.quiet-effects .explanation-transition__veil{animation:none!important;display:none}
+:root[data-quiet-effects="true"] .explanation-transition .glass-surface__material,.quiet-effects .explanation-transition .glass-surface__material{background:#f9fbf6;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root[data-quiet-effects="true"] .explanation-transition .glass-surface__edge,.quiet-effects .explanation-transition .glass-surface__edge{background:none;box-shadow:none;border-color:#cdd8c6}
+@media(prefers-reduced-motion:reduce),(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
+  .explanation-transition{transition:none}
+  .explanation-transition .explanation-transition__content{animation:none;opacity:1;filter:none}
+  .explanation-transition .explanation-transition__veil{animation:none;display:none}
+  .explanation-transition .glass-surface__material{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+@media(forced-colors:active){.explanation-transition__status{color:CanvasText}}

@@ -69,18 +69,24 @@ function ParameterTable() {
   return <div className="learning-table-wrap"><table className="learning-table"><caption>Подставляем каждое целое k в x = π/3 + πk</caption><thead><tr><th scope="col">k</th><th scope="col">Подстановка</th><th scope="col">Угол x</th></tr></thead><tbody>{[['−2', '\\pi/3-2\\pi', '-5\\pi/3'], ['−1', '\\pi/3-\\pi', '-2\\pi/3'], ['0', '\\pi/3+0', '\\pi/3']].map(([k, substitution, x]) => <tr key={k}><th scope="row">{k}</th><td><MathContent text={`$${substitution}$`}/></td><td><MathContent text={`$${x}$`}/></td></tr>)}</tbody></table></div>
 }
 
-export function LearningEpisode({ episodeId, progress, onProgress, onComplete, onAsk, onMaterial, onBack, onCheck }: {
+export function LearningEpisode({ episodeId, progress, onProgress, onComplete, onAsk, onMaterial, onBack, onCheck, completionLabel = 'К следующей теме', backLabel = 'К началу занятия' }: {
   episodeId: string; progress: EpisodeProgress; onProgress(next: EpisodeProgress): void; onComplete(next?: EpisodeProgress): void;
-  onAsk(text: string): void; onMaterial(id: string): void; onBack(): void
+  /** Execute this contextual request immediately; keep the learner's freeform draft intact. */
+  onAsk(text: string): void; onMaterial(id: string): void; onBack(): void; completionLabel?: string; backLabel?: string
   onCheck?(checkId: string, answer: string): Promise<{status: CheckStatus; message: string}>
 }) {
   const generation = useRef(0)
   const heading = useRef<HTMLHeadingElement>(null)
+  const probe = useRef<HTMLDivElement>(null)
   useEffect(() => {
     window.mathVirtualKeyboard?.hide()
     heading.current?.focus({preventScroll:true})
     heading.current?.scrollIntoView({block:'start',behavior:'instant'})
-  }, [episodeId, progress.step])
+  }, [episodeId])
+  useEffect(() => {
+    // Adjacent probes share the answer host. Keep the viewport and keyboard stable.
+    if (progress.step > 0) probe.current?.querySelector<HTMLElement>('input, math-field, [role="radio"][aria-checked="true"], [role="radio"]')?.focus({ preventScroll: true })
+  }, [progress.step])
   const [checking, setChecking] = useState(false)
   const [checkError, setCheckError] = useState('')
   const latest = useRef({ episodeId, progress })
@@ -97,6 +103,11 @@ export function LearningEpisode({ episodeId, progress, onProgress, onComplete, o
     ? {status: 'unknown', message: 'Проверка записи обновилась. Проверь этот ответ ещё раз, чтобы сохранить новый результат.'}
     : recalculated
   const patch = (next: Partial<EpisodeProgress>) => onProgress({ ...progress, ...next })
+  const advance = (skipped = false) => {
+    const next = { ...progress, step: step + 1, skipped: skipped || progress.skipped }
+    if (step === episode.checks.length) onComplete(next)
+    else onProgress(next)
+  }
   const answer = (value: string) => {
     generation.current++; setChecking(false); setCheckError('')
     const outcomes = { ...progress.outcomes }; delete outcomes[check.id]
@@ -104,28 +115,29 @@ export function LearningEpisode({ episodeId, progress, onProgress, onComplete, o
   }
   const ask = () => onAsk(`Разбираю «${episode.title}». ${check ? `Задание: ${check.prompt}. Мой ответ: ${progress.answers[check.id] || 'пока не записан'}. ` : ''}Объясни иначе, простым языком.`)
   return <section className="learning-episode" aria-label={episode.title}>
-    <header className="learning-top"><button type="button" className="learning-quiet" onClick={onBack}><ArrowLeft size={16}/>К тренировке</button><span>{step === 0 ? 'Объяснение' : check ? `Проба ${step} из ${episode.checks.length}` : 'Можно двигаться дальше'}</span></header>
+    <header className="learning-top"><button type="button" className="learning-quiet" onClick={onBack}><ArrowLeft size={16}/>{backLabel}</button><span>{step === 0 ? 'Объяснение' : check ? `Проба ${step} из ${episode.checks.length}` : 'Следующий шаг'}</span></header>
     <div className="learning-heading"><p className="learning-eyebrow">Небольшой шаг к полной задаче</p><h1 ref={heading} tabIndex={-1}>{episode.title}</h1><p>{episode.goal}</p></div>
     {step === 0 ? <>
-      {episode.explanation.map((text, i) => <MathContent key={i} text={text}/>)}
+      {(episode.id === 'K1' ? episode.explanation.slice(0, 1) : episode.explanation).map((text, i) => <MathContent key={i} text={text}/>)}
       {episode.id === 'K2' && <RadianDiagram/>}
       {episode.circle && <CircleExplorer key={episode.id} beginner={episode.id === 'K1'}/>}
+      {episode.id === 'K1' && <><button className="learning-primary" onClick={() => patch({ step: 1 })}>Ответить на вопрос <ArrowRight size={17}/></button><details className="learning-why"><summary>Как читать запись синуса</summary>{episode.explanation.slice(1).map((text, i) => <MathContent key={i} text={text}/>)}<MathContent text={episode.example}/></details></>}
       {episode.id === 'K3' && <ReferenceTable/>}
       {episode.id === 'K4' && <IntersectionDiagram/>}
       {episode.id === 'K6' && <ParameterTable/>}
-      <div className="learning-example"><span className="learning-eyebrow">Посмотрим на примере</span><MathContent text={episode.example}/>{episode.exampleSteps && <ol className="learning-worked-steps">{episode.exampleSteps.map((text, i) => <li key={i}><MathContent text={text}/></li>)}</ol>}</div>
-      <details className="learning-why"><summary>Почему это работает</summary><MathContent text={episode.why}/></details>
-      <button className="learning-primary" onClick={() => patch({ step: 1 })}>Попробовать самому <ArrowRight size={17}/></button>
-    </> : check ? <div className="learning-check" key={check.id}>
+      {episode.id !== 'K1' && <div className="learning-example"><span className="learning-eyebrow">Посмотрим на примере</span><MathContent text={episode.example}/>{episode.exampleSteps && <ol className="learning-worked-steps">{episode.exampleSteps.map((text, i) => <li key={i}><MathContent text={text}/></li>)}</ol>}</div>}
+      <details className="learning-why"><summary>{episode.id === 'K1' ? 'Что означает эта запись' : 'Почему это работает'}</summary><MathContent text={episode.why}/></details>
+      {episode.id !== 'K1' && <button className="learning-primary" onClick={() => patch({ step: 1 })}>Попробовать самому <ArrowRight size={17}/></button>}
+    </> : check ? <div className="learning-check" ref={probe}>
       <p className="learning-eyebrow">{episode.id === 'M1' ? 'Собираем решение по шагам' : episode.id === 'M2' && step > 1 ? 'Продолжаем тот же пример' : check.transfer ? 'Теперь другой пример' : 'Попробуем на коротком примере'}</p>
       <MathContent text={check.prompt}/>
       {check.kind === 'series' && <p className="learning-muted">Разделяй серии точкой с запятой. Шаблон: x = a + Tk; вместо a и T подставь начальный угол и шаг. Параметры считаются целыми.</p>}
       {check.kind === 'choice' ? <div className="learning-options" role="radiogroup" aria-label="Ответ">
         {check.options?.map((option, index) => <button type="button" role="radio" aria-checked={progress.answers[check.id] === String(index)} key={index} onClick={() => answer(String(index))} className={progress.answers[check.id] === String(index) ? 'selected' : ''}><MathContent text={option}/></button>)}
-      </div> : <MathAnswer label="Твой ответ" multiple={check.kind === 'series' || check.answer.includes(';')} value={progress.answers[check.id] ?? ''} onChange={answer}/>}
+      </div> : <MathAnswer answerKey={check.id} label="Твой ответ" mode={check.kind === 'values' && /^-?\d+(;-?\d+)*$/.test(check.answer) ? 'number' : 'math'} multiple={check.kind === 'series' || check.answer.includes(';')} value={progress.answers[check.id] ?? ''} onChange={answer}/>}
       {result && <div className={`learning-feedback ${result.status}`} role="status"><strong>{result.status === 'correct' ? 'Получилось' : result.status === 'unknown' ? 'Уточним запись' : 'Посмотрим на этот шаг'}</strong><MathContent text={result.message}/>{(progress.attempts[check.id] ?? 0) > 1 && result.status !== 'correct' && <p>Можно вернуться к примеру или обсудить это место с наставником. Проходить дальше тоже можно.</p>}</div>}
       {checkError && <p role="alert">{checkError}</p>}
-      <div className="learning-actions">{outcome === 'correct' && result?.status === 'correct' ? <button className="learning-primary" onClick={() => patch({ step: step + 1 })}>Дальше <ArrowRight size={17}/></button> : <button className="learning-primary" disabled={checking || !progress.answers[check.id]?.trim()} onClick={async () => {
+      <div className="learning-actions">{outcome === 'correct' && result?.status === 'correct' ? <button className="learning-primary" onClick={() => advance()}>{step === episode.checks.length ? completionLabel : 'К следующей пробе'} <ArrowRight size={17}/></button> : <button className="learning-primary" disabled={checking || !progress.answers[check.id]?.trim()} onClick={async () => {
         const requestGeneration = ++generation.current
         setChecking(true); setCheckError('')
         try {
@@ -135,10 +147,9 @@ export function LearningEpisode({ episodeId, progress, onProgress, onComplete, o
         } catch { if (generation.current === requestGeneration) setCheckError('Не удалось сохранить проверку. Ответ остался здесь; попробуй ещё раз.') }
         finally { if (generation.current === requestGeneration) setChecking(false) }
       }}>{checking ? 'Проверяем…' : 'Проверить'}</button>}<button className="learning-quiet" onClick={() => patch({ step: 0 })}>Вернуться к объяснению</button></div>
-    </div> : <div className="learning-finished"><h2>Можно продолжить в своём темпе</h2><p>Верных ответов: {episode.checks.filter(item => progress.outcomes[item.id] === 'correct').length} из {episode.checks.length}. Следующий шаг — применить это в новом примере или вернуться к своей задаче.</p>{progress.skipped && <p className="learning-muted">К пропущенным пробам можно вернуться.</p>}<div className="learning-actions"><button className="learning-primary" onClick={() => onComplete(progress)}>Продолжить тренировку <ArrowRight size={17}/></button><button type="button" className="learning-quiet" onClick={() => patch({ step: 0 })}>Открыть объяснение</button><button type="button" className="learning-quiet" onClick={() => { generation.current++; setChecking(false); setCheckError(''); onProgress({ ...emptyEpisodeProgress(), step: 1 }) }}>Попробовать ещё раз</button></div></div>}
+    </div> : <div className="learning-finished"><div className="learning-actions"><button className="learning-primary" onClick={() => onComplete(progress)}>{completionLabel} <ArrowRight size={17}/></button><button type="button" className="learning-quiet" onClick={() => { generation.current++; setChecking(false); setCheckError(''); onProgress({ ...emptyEpisodeProgress(), step: 1 }) }}>Повторить пробы</button></div></div>}
     <footer className="learning-footer"><button className="learning-quiet" onClick={ask}><MessageCircle size={16}/>Объяснить иначе</button>{episode.materialId && <button className="learning-quiet" onClick={() => onMaterial(episode.materialId!)}><BookOpen size={16}/>Подробнее в материалах</button>}
-      {check && <button className="learning-quiet" onClick={() => patch({ step: step + 1, skipped: true })}>Пропустить эту пробу</button>}
-      <button className="learning-quiet" onClick={() => { const next = { ...progress, skipped: true }; onProgress(next); onComplete(next) }}>Перейти дальше без проверки</button>
+      {check && outcome !== 'correct' && <button className="learning-quiet" disabled={checking} onClick={() => advance(true)}>{step === episode.checks.length ? 'Закончить тему без этой проверки' : 'Пропустить эту пробу'}</button>}
     </footer>
   </section>
 }

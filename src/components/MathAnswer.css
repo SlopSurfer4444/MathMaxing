@@ -11,3 +11,8 @@
 .math-answer-symbols button:focus-visible { outline: 2px solid #386b52; outline-offset: 2px; }
 .math-answer small { color: #747c72; font-size: 12px; }
 .math-answer.is-disabled { opacity: .65; }
+.math-answer-number-row { display:flex; gap:8px; max-width:360px; }
+.math-answer-number-row input { min-width:0; width:100%; min-height:48px; padding:9px 12px; border:1px solid #d8ded7; border-radius:12px; background:#fff; color:#27332c; font:inherit; font-size:21px; }
+.math-answer-number-row input:focus { outline:2px solid #386b52; outline-offset:2px; }
+.math-answer-number-row button { flex:0 0 48px; min-height:48px; border:1px solid #d8ded7; border-radius:10px; background:#f8f9f6; color:#34463d; font-size:22px; }
+.math-answer-number-row button:focus-visible { outline:2px solid #386b52; outline-offset:2px; }

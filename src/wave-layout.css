@@ -1,0 +1,21 @@
+/* One reading surface until the learner explicitly opens help. */
+@media (min-width:901px) {
+  .app-shell .workspace.mentor-closed { grid-template-columns:minmax(0,800px) !important; justify-content:center !important; }
+  .app-shell .workspace.mentor-closed > .mentor-column { display:none; }
+  .app-shell .workspace.has-open-mentor { grid-template-columns:minmax(0,1fr) 350px; }
+}
+@media (max-width:900px) {
+  .app-shell .workspace:has(.chat-panel.is-open) > .notebook-column { visibility:visible; }
+  .app-shell .workspace.has-open-mentor > .mentor-column { position:fixed; inset:0; z-index:100; background:#f6f5f1; }
+  .app-shell .workspace.has-open-mentor .chat-panel.is-open { position:fixed; inset:0; width:100%; height:100dvh; max-height:100dvh; margin:0; border-radius:0; }
+  .app-shell .workspace.mentor-closed > .mentor-column { display:none; }
+}
+.bound-answer { padding:14px 0; border-top:1px solid #e1e5df; }
+.bound-answer h3 { font-size:15px; margin:0 0 10px; }
+.bound-answer .answer-source { display:flex; flex-wrap:wrap; gap:12px; width:100%; padding:10px; text-align:left; justify-content:space-between; background:#f4f6f0; border-radius:8px; margin-bottom:6px; }
+.answer-source small { color:#526159; font-size:12px; }
+.answer-card > h2 { margin-top:0; }
+.result-card .series-result { margin:12px 0; }
+.result-card .model-review summary { cursor:pointer; font-size:15px; padding:10px 0; }
+.chat-return { white-space:nowrap; }
+.app-shell .paper-footer { flex-wrap:wrap; }

@@ -1,0 +1,11 @@
+.profile-recovery{margin-top:1.5rem;border-top:1px solid #dedfd7;padding-top:1rem;font-size:.92rem}
+.profile-recovery summary{cursor:pointer;width:fit-content}
+.profile-recovery-content{max-width:36rem;display:grid;gap:.8rem;padding:1rem 0}
+.profile-recovery-content p,.profile-recovery-content h3{margin:0;line-height:1.5}
+.profile-recovery-content label{display:grid;gap:.4rem}
+.profile-recovery-content input[type=password],.profile-recovery-code{width:100%;box-sizing:border-box;border:1px solid #a4aaa1;border-radius:8px;padding:.65rem;background:#fff;color:#20271f}
+.profile-recovery-code{font-family:monospace;overflow-wrap:anywhere;resize:vertical}
+.profile-recovery-content .profile-recovery-check{display:flex;align-items:flex-start;gap:.6rem}
+.profile-recovery-check input{margin-top:.25rem;flex-shrink:0}
+.profile-recovery-content button{justify-self:start}
+.profile-recovery-content hr{width:100%;border:0;border-top:1px solid #dedfd7}

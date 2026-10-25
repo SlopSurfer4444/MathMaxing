@@ -1,3 +1,4 @@
+import { versionedRoute } from './test-support/versioned-route.mjs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { makeApp } from './index.mjs'
@@ -40,7 +41,7 @@ test('old preparation draft, answer and return cannot mutate a later instance ev
   try {
     const work=app.store.current()
     const first=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'root-selection'})).work.preparation
-    await app.route('POST','/api/preparation/return',{workId:work.id,preparationId:first.id})
+    await versionedRoute(app,'POST','/api/preparation/return',{workId:work.id,preparationId:first.id})
     const second=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'root-selection'})).work.preparation
     assert.notEqual(first.id,second.id)
     assert.equal(second.exerciseId,'root-selection')
@@ -59,13 +60,13 @@ test('visiting, failing or clearing a successful selection never raises difficul
     for(const answer of ['', '0', '-5π/3;-2π/3;π/3']){
       const preparation=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'root-selection'})).work.preparation
       assert.equal(preparation.exerciseId,'root-selection')
-      if(answer){await app.route('POST','/api/preparation/answer',{workId:work.id,preparationId:preparation.id,answer})}
-      if(answer.includes(';'))await app.route('POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'0'})
-      await app.route('POST','/api/preparation/return',{workId:work.id,preparationId:preparation.id})
+      if(answer){await versionedRoute(app,'POST','/api/preparation/answer',{workId:work.id,preparationId:preparation.id,answer})}
+      if(answer.includes(';'))await versionedRoute(app,'POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'0'})
+      await versionedRoute(app,'POST','/api/preparation/return',{workId:work.id,preparationId:preparation.id})
     }
     const repeated=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'root-selection'})).work.preparation
     assert.equal(repeated.exerciseId,'root-selection')
-    await app.route('POST','/api/preparation/return',{workId:work.id,preparationId:repeated.id})
+    await versionedRoute(app,'POST','/api/preparation/return',{workId:work.id,preparationId:repeated.id})
     const harder=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'root-selection',harder:true})).work.preparation
     assert.match(harder.exerciseId,/^selection-v1-/)
   } finally {await app.close()}
@@ -98,11 +99,11 @@ test('lost submission response is recovered by request ID with one immutable att
   try {
     const work=app.store.current(),request={workId:work.id,requestId:'durable-request'}
     assert.equal((await app.route('POST','/api/submit/lookup',request)).submission,null)
-    await app.route('POST','/api/submit',request) // Client loses this response.
+    await versionedRoute(app,'POST','/api/submit',request) // Client loses this response.
     const recovered=await app.route('POST','/api/submit/lookup',request)
     assert.equal(recovered.submission.reviewStatus,'pending')
     await app.route('POST','/api/work/save',{workId:work.id,expectedRevision:0,document:work.document,finalAnswer:'new draft'})
-    const repeated=await app.route('POST','/api/submit',request)
+    const repeated=await versionedRoute(app,'POST','/api/submit',request)
     assert.equal(repeated.submission.id,recovered.submission.id)
     assert.equal(repeated.work.submissions.length,1)
     assert.equal(repeated.submission.finalAnswer,'')
@@ -122,8 +123,8 @@ test('tutor receives current general solution and unverified preparation draft, 
     const work=app.store.current()
     await app.route('POST','/api/work/save',{workId:work.id,expectedRevision:0,document:work.document,finalAnswer:'',generalAnswer:'x=πk'})
     const preparation=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'root-selection'})).work.preparation
-    await app.route('POST','/api/preparation/answer',{workId:work.id,preparationId:preparation.id,answer:'-5π/3;-2π/3;π/3'})
-    await app.route('POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'π/3'})
+    await versionedRoute(app,'POST','/api/preparation/answer',{workId:work.id,preparationId:preparation.id,answer:'-5π/3;-2π/3;π/3'})
+    await versionedRoute(app,'POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'π/3'})
     const pending=app.route('POST','/api/chat',{workId:work.id,requestId:'current-draft',message:'Посмотри мою запись'})
     assert.equal(packet.generalAnswer,'x=πk')
     assert.equal(packet.activeExercise.currentAnswer,'π/3')
@@ -131,7 +132,7 @@ test('tutor receives current general solution and unverified preparation draft, 
     assert.equal(packet.activeExercise.currentAnswerStatus,'unverified')
     assert.equal(packet.activeExercise.attempts[0].result.status,'correct')
     assert.equal(packet.activeExercise.preparationId,preparation.id)
-    await app.route('POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'π/3;0'})
+    await versionedRoute(app,'POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'π/3;0'})
     finish({text:'Объяснение прежней записи'})
     const response=await pending
     assert.equal(response.work.messages.at(-1).stale,true)
@@ -145,7 +146,7 @@ test('editing preparation after a completed tutor reply marks the existing reply
     const preparation=(await app.route('POST','/api/preparation/start',{workId:work.id,exerciseId:'lost-branch'})).work.preparation
     const chat=await app.route('POST','/api/chat',{workId:work.id,requestId:'old-draft',message:'Помоги'})
     assert.equal(chat.work.messages.at(-1).stale,false)
-    const edited=await app.route('POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'cos-zero'})
+    const edited=await versionedRoute(app,'POST','/api/preparation/draft',{workId:work.id,preparationId:preparation.id,answer:'cos-zero'})
     assert.equal(edited.work.messages.at(-1).stale,true)
   } finally {await app.close()}
 })

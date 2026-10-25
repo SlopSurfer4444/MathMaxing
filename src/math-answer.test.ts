@@ -9,6 +9,10 @@ test('legacy pi notation becomes display notation without changing existing comm
 test('presentation spacing cannot become accidental root separators', () => {
   assert.equal(canonicalMathAnswer('\\dfrac{\\pi}{3}\\,; -\\pi'), '\\frac{\\pi}{3}; -\\pi')
 })
+
+test('ASCII multiplication after pi does not become an unknown starred TeX command', () => {
+  assert.equal(toMathAnswerLatex('x = pi*k'), 'x = \\pi\\cdot k')
+})
 test('MathLive fraction shorthand preserves its exact literal meaning', () => {
   assert.equal(canonicalMathAnswer('\\frac14'), '\\frac{1}{4}')
   assert.equal(canonicalMathAnswer('\\frac{\\pi}2'), '\\frac{\\pi}{2}')

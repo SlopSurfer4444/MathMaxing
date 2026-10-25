@@ -5,9 +5,9 @@ import { materials, materialRelations, materialSource, type Material } from '../
 import type { ChatContext } from '../notebook-state'
 import { MathText } from './MathContent'
 import { KnowledgeDiagram } from './KnowledgeDiagram'
+import { contextualMaterials, hasMaterialContext } from '../material-context'
 import '../knowledge.css'
 
-const taskIds = ['double-angle', 'zero-product', 'division', 'interval']
 const foundationIds = ['right-triangle', 'sine', 'cosine', 'radians', 'unit-circle', 'angle-addition']
 const terms: [string, string][] = [
   ['прямоугольного треугольника', 'right-triangle'], ['прямоугольном треугольнике', 'right-triangle'], ['прямоугольный треугольник', 'right-triangle'],
@@ -46,9 +46,9 @@ const practiceForMaterial: Record<string, { id: string; label: string }> = {
   division: { id: 'K7', label: 'Проверить потерянный случай' },
   interval: { id: 'K6', label: 'Самому отобрать корни' },
 }
-type TheoryProps = { onAttach(context: ChatContext): void; requestedMaterialId?: string | null; requestToken?: number; onPractice?(episodeId: string): void }
+type TheoryProps = { onAttach(context: ChatContext): void; requestedMaterialId?: string | null; requestToken?: number; onPractice?(episodeId: string): void; family?: string | null; solo?: boolean }
 
-export function Theory({ onAttach, requestedMaterialId, requestToken, onPractice }: TheoryProps) {
+export function Theory({ onAttach, requestedMaterialId, requestToken, onPractice, family, solo = false }: TheoryProps) {
   const root = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const hasNavigated = useRef(false)
@@ -130,16 +130,13 @@ export function Theory({ onAttach, requestedMaterialId, requestToken, onPractice
     {navigationError && <p className="knowledge-notice" role="status">{navigationError}</p>}
     {cleanQuery ? <div className="knowledge-results"><p className="knowledge-eyebrow" role="status">Найдено статей: {results.length}</p>{results.length ? results.map(item => <button key={item.id} className="knowledge-entry" onClick={() => navigate(item.id)}><span><strong>{item.title}</strong><small>{item.statement}</small></span><ArrowUpRight size={15} /></button>) : <p>Попробуй «синус», «окружность» или «радианы».</p>}<button className="knowledge-text-button" onClick={() => setQuery('')}>Закрыть поиск</button></div> : <>
       <nav className="knowledge-breadcrumb" aria-label="Путь в библиотеке"><button onClick={() => navigate(null)}>Все статьи · {materials.length}</button>{material && <><ChevronRight size={12} /><span aria-current="page">{material.title}</span></>}</nav>
-      {!material ? <div className="knowledge-directory"><h3 tabIndex={-1} ref={heading}>С чего начнём?</h3><p>Можно открыть правило из задачи или разобраться с тригонометрией с нуля.</p><h4>Для текущей задачи</h4><div className="knowledge-topic-grid">{taskIds.map(id => {
-        const item = materials.find(entry => entry.id === id)!
-        return <button className="knowledge-topic" key={id} onClick={() => navigate(id)}><small>{item.tag}</small><strong>{item.title}</strong><ArrowUpRight size={15} /></button>
-      })}</div><h4>Разобраться с самого начала</h4><div className="knowledge-learning-path">{foundationIds.map((id, index) => <div key={id}><span>{String(index + 1).padStart(2, '0')}</span>{articleLink(id)}</div>)}</div></div> : <article className="theory-card" data-material={material.id} id={`material-${material.id}`} key={material.id}>
+      {!material ? <div className="knowledge-directory"><h3 tabIndex={-1} ref={heading}>С чего начнём?</h3><p>Можно найти нужное понятие или разобраться с тригонометрией с нуля.</p>{!solo && <><h4>{hasMaterialContext(family) ? 'Понятия для этой задачи' : 'Часто используемые правила'}</h4><div className="knowledge-topic-grid">{contextualMaterials(family).map(item => <button className="knowledge-topic" key={item.id} onClick={() => navigate(item.id)}><small>{item.tag}</small><strong>{item.title}</strong><ArrowUpRight size={15} /></button>)}</div></>}<h4>Разобраться с самого начала</h4><div className="knowledge-learning-path">{foundationIds.map((id, index) => <div key={id}><span>{String(index + 1).padStart(2, '0')}</span>{articleLink(id)}</div>)}</div></div> : <article className="theory-card" data-material={material.id} id={`material-${material.id}`} key={material.id}>
         <div className="theory-card-top"><span>{material.tag} · СТАТЬЯ</span><button onClick={() => onAttach(contextFor(material, material.statement))} title="Прикрепить статью к вопросу"><MessageSquarePlus size={14} /> В чат</button></div>
-        <h3 ref={heading} tabIndex={-1}>{material.title}</h3><p className="theory-statement">{text(material.statement)}</p>
-        <div className="theory-formula"><MathText value={material.formula} /><button aria-label={`Добавить формулу «${material.title}» в чат`} onClick={() => onAttach(contextFor(material, material.formula, material.formula))}><ArrowUpRight size={16} /></button></div>
-        <p>{text(material.explanation)}</p>
-        {relations && relations.prerequisites.length > 0 && <aside className="knowledge-prerequisites"><span>Нужно вспомнить основы?</span><p>Открой любое понятие. К этой статье можно вернуться кнопкой «Назад».</p><div>{relations.prerequisites.map(articleLink)}</div></aside>}
+        <h3 ref={heading} tabIndex={-1}>{material.title}</h3><p>{text(material.explanation)}</p>
         {material.diagram && <KnowledgeDiagram kind={material.diagram} />}
+        <p className="theory-statement">{text(material.statement)}</p>
+        <div className="theory-formula"><MathText value={material.formula} /><button aria-label={`Добавить формулу «${material.title}» в чат`} onClick={() => onAttach(contextFor(material, material.formula, material.formula))}><ArrowUpRight size={16} /></button></div>
+        {relations && relations.prerequisites.length > 0 && <aside className="knowledge-prerequisites"><span>Нужно вспомнить основы?</span><p>Открой любое понятие. К этой статье можно вернуться кнопкой «Назад».</p><div>{relations.prerequisites.map(articleLink)}</div></aside>}
         {material.sections?.map(section => <section className="knowledge-section" key={section.title}><h4>{section.title}</h4><p>{text(section.text)}</p>{section.formula && <div className="knowledge-section-formula"><MathText value={section.formula} /></div>}</section>)}
         <details className="theory-proof"><summary>Почему это работает <span>Объяснение и пример</span></summary><div>{material.proof.map((step, i) => <div className="proof-step" key={i}><span>{i + 1}</span><div><p>{text(step.text)}</p>{step.formula && <MathText value={step.formula} />}</div></div>)}</div></details>
         <p className="theory-caution"><span>Обрати внимание</span>{text(material.caution)}</p>

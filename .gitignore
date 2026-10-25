@@ -7,13 +7,4 @@ dist-*/
 !.env.example
 .runtime/
 public/mathlive/
-*.sqlite
-*.sqlite-*
-*.db
-*.db-*
-*.pem
-*.key
-*.log
-coverage/
-.DS_Store
-Thumbs.db
+design/field-study/vendor/

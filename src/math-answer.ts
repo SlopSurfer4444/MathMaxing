@@ -9,4 +9,5 @@ export function canonicalMathAnswer(value: string): string {
 export function toMathAnswerLatex(value: string): string {
   return value.replace(/(?<![A-Za-z\\])pi(?![A-Za-z])/g, '\\pi')
     .replaceAll('π', '\\pi ')
+    .replaceAll('*', '\\cdot ')
 }

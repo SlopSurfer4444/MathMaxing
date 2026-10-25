@@ -1,3 +1,4 @@
+import { versionedRoute } from './test-support/versioned-route.mjs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { makeApp } from './index.mjs'
@@ -28,7 +29,7 @@ test('authored course works offline then new solo freezes exact independent answ
     const problem=app.store.problem(next)
     const series=problem.series.map(s=>`${formatRoot(s.a)}+${formatRoot(s.d)}k`).join(';')
     await app.route('POST','/api/work/save',{workId:next.id,expectedRevision:0,document:next.document,generalAnswer:series,finalAnswer:problem.roots.map(formatRoot).join(';')})
-    const submitted=await app.route('POST','/api/submit',{workId:next.id,requestId:'flow'})
+    const submitted=await versionedRoute(app,'POST','/api/submit',{workId:next.id,requestId:'flow'})
     assert.equal(submitted.submission.result.status,'correct')
     assert.equal(submitted.submission.seriesResult.status,'correct')
     await new Promise(setImmediate)

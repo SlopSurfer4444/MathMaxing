@@ -76,14 +76,56 @@
   outline-offset: 2px;
 }
 .notebook-editor .math-block math-field::part(virtual-keyboard-toggle) { visibility: visible; }
+.notebook-editor .math-block[data-answer-parts] .math-block__header { opacity: 1; pointer-events: auto; }
+.notebook-editor[data-answers-enabled="true"] .math-block { padding-top: 6px; }
+.notebook-editor[data-answers-enabled="true"] .math-block__header {
+  position: static;
+  height: auto;
+  min-height: 32px;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+.notebook-editor .math-block__actions { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+.notebook-answer-toggle {
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: 12px;
+  min-height: 32px;
+  padding: 4px 7px;
+  border: 1px solid #d5dfcd;
+  background: #f8faf5;
+  border-radius: 5px;
+  color: #435b39;
+  white-space: nowrap;
+}
+.notebook-answer-toggle[aria-pressed="true"] { background: #e4eedb; border-color: #9bb28b; }
+.notebook-answer-toggle:focus-visible { outline: 2px solid #5c804c; outline-offset: 2px; }
+.notebook-answer-marker { color: #435b39; font-size: 11px; white-space: nowrap; margin-right: auto; }
+.notebook-editor .tiptap :is(p, h1, h2, h3, h4, h5, h6)[data-answer-parts] {
+  border-left: 2px solid #9bb28b;
+  padding-left: 9px;
+}
+.notebook-editor .tiptap :is(p, h1, h2, h3, h4, h5, h6)[data-answer-parts][data-answer-label]::before {
+  content: attr(data-answer-label);
+  display: block;
+  float: none;
+  height: auto;
+  color: #526b43;
+  font: 11px/1.6 Inter, "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+.editor-context-action, .editor-local-insert { display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100vw - 16px); }
+.editor-local-insert > .notebook-answer-toggle { min-height: 32px; height: auto; color: #435b39; font-size: 12px; }
 @media (pointer: coarse) {
   .notebook-editor .math-block__header { opacity: 1; pointer-events: auto; }
   .notebook-editor .math-block__palette button { min-width: 44px; min-height: 44px; }
   .notebook-editor .math-block__actions button { min-width: 44px; min-height: 44px; }
   .notebook-editor .math-block__header { height: 44px; }
   .notebook-editor .math-block { padding-top: 49px; }
+  .notebook-answer-toggle { min-height: 44px; }
+  .editor-local-insert > .notebook-answer-toggle { min-height: 44px; }
 }
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .notebook-editor .math-block__header { position: static; height: auto; margin-bottom: 6px; }
   .notebook-editor .math-block__actions { flex-wrap: wrap; justify-content: flex-end; }
   .notebook-editor .math-block { padding-top: 6px; }

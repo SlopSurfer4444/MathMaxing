@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { Store } from './store.mjs'
+import { Store, PROFILE_LIMITS } from './store.mjs'
 
 test('original ownerless schema migrates without sharing local work, memory or learning',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'pole-old-schema-')),path=join(directory,'old.sqlite')
@@ -36,10 +36,10 @@ test('guest resource exhaustion rejects new data without evicting saved work or 
     const guest=store.forVisitor(randomUUID()),peer=store.forVisitor(randomUUID()),work=guest.current(),peerWork=peer.current()
     const tooLarge=structuredClone(work);tooLarge.document={type:'doc',content:[{type:'text',text:'x'.repeat(1000000)}]}
     assert.throws(()=>guest.put(tooLarge),{status:429});assert.deepEqual(guest.current(),work)
-    for(let i=1;i<100;i++)guest.create('double-angle-cos','guided')
+    for(let i=1;i<PROFILE_LIMITS.works;i++)guest.create('double-angle-cos','guided')
     const current=guest.current()
     assert.throws(()=>guest.create('double-angle-sin','guided'),{status:429})
-    assert.equal(guest.list().length,100);assert.deepEqual(guest.current(),current);assert.deepEqual(guest.get(work.id),work)
+    assert.equal(guest.list().length,PROFILE_LIMITS.works);assert.deepEqual(guest.current(),current);assert.deepEqual(guest.get(work.id),work)
     assert.deepEqual(peer.current(),peerWork);assert.equal(peer.list().length,1);assert.deepEqual(store.list(),[])
     for(let i=0;i<310;i++)guest.learningChecked({workId:work.id,kind:'diagnostic',summary:`check ${i}`})
     assert.equal(guest.learningEvidence().length,60)

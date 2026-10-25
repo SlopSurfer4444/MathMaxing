@@ -129,7 +129,7 @@ test('two hosted visitors keep notebooks, current work, chat, learning, memory a
     await ok(f, '/api/chat', { visitor: a, body: { workId: work.id, requestId: 'shared-request-id', message: 'Приватный вопрос A', contexts: [] } })
     const prep = (await ok(f, '/api/preparation/start', { visitor: a, body: { workId: work.id, exerciseId: 'root-selection', harder: true } })).work.preparation
     assert.match(prep.exerciseId, /^selection-v1-/)
-    await ok(f, '/api/preparation/draft', { visitor: a, body: { workId: work.id, preparationId: prep.id, answer: 'Приватный черновик A' } })
+    await ok(f, '/api/preparation/draft', { visitor: a, body: { workId: work.id, preparationId: prep.id, expectedRevision: 0, answer: 'Приватный черновик A' } })
     await ok(f, '/api/learning', { visitor: a, body: { workId: work.id, expectedRevision: 0, entry: 'explain', view: 'episode', episodeId: 'K1', progress: { K1: { step: 1, answers: { private: 'Ответ A' } } } } })
     const check = learningEpisodes.find(episode => episode.id === 'K1').checks[0]
     await ok(f, '/api/learning/answer', { visitor: a, body: { workId: work.id, episodeId: 'K1', checkId: check.id, answer: check.answer } })
@@ -146,8 +146,8 @@ test('two hosted visitors keep notebooks, current work, chat, learning, memory a
     assert.deepEqual(await ok(f, '/api/session', { visitor: b }), b.session)
     assert.deepEqual(await ok(f, '/api/state', { visitor: a }), privateState)
     assert.deepEqual(await ok(f, '/api/state', { visitor: b }), originalB)
-    await ok(f, '/api/preparation/return', { visitor: a, body: { workId: work.id, preparationId: prep.id } })
-    const submitted = await ok(f, '/api/submit', { visitor: a, body: { workId: work.id, requestId: 'private-submission' } })
+    await ok(f, '/api/preparation/return', { visitor: a, body: { workId: work.id, preparationId: prep.id, expectedRevision: 1 } })
+    const submitted = await ok(f, '/api/submit', { visitor: a, body: { workId: work.id, requestId: 'private-submission', expectedRevision: 1, expectedModeEpoch: 2 } })
     assert.equal(submitted.memory.length, 1)
     await ok(f, '/api/work/new', { visitor: a, body: { problemId: 'double-angle-sin', mode: 'guided' } })
     const afterNew = await ok(f, '/api/state', { visitor: a })
@@ -223,21 +223,30 @@ test('interleaved background reviews write back only into their original visitor
   const f = await fixture({}, (_args, packet) => new Promise(resolve => { replies.set(packet.submission.id, resolve) }))
   try {
     const a = await visitor(f), b = await visitor(f)
-    const workA = (await ok(f, '/api/state', { visitor: a })).work, workB = (await ok(f, '/api/state', { visitor: b })).work
-    const submittedA = await ok(f, '/api/submit', { visitor: a, body: { workId: workA.id, requestId: 'same-submission-id' } })
-    const submittedB = await ok(f, '/api/submit', { visitor: b, body: { workId: workB.id, requestId: 'same-submission-id' } })
+    let workA = (await ok(f, '/api/state', { visitor: a })).work, workB = (await ok(f, '/api/state', { visitor: b })).work
+    workA = (await ok(f, '/api/work/save', { visitor: a, body: { workId: workA.id, expectedRevision: 0, document: {type:'doc',content:[{type:'paragraph',attrs:{id:'line-a'},content:[{type:'text',text:'Запись только A'}]}]}, finalAnswer: '' } })).work
+    workB = (await ok(f, '/api/work/save', { visitor: b, body: { workId: workB.id, expectedRevision: 0, document: {type:'doc',content:[{type:'paragraph',attrs:{id:'line-b'},content:[{type:'text',text:'Запись только B'}]}]}, finalAnswer: '' } })).work
+    const submittedA = await ok(f, '/api/submit', { visitor: a, body: { workId: workA.id, requestId: 'same-submission-id', expectedRevision: 1, expectedModeEpoch: 0 } })
+    const submittedB = await ok(f, '/api/submit', { visitor: b, body: { workId: workB.id, requestId: 'same-submission-id', expectedRevision: 1, expectedModeEpoch: 0 } })
     assert.equal(submittedA.submission.reviewStatus, 'pending')
     assert.equal(submittedB.submission.reviewStatus, 'pending')
-    replies.get(submittedB.submission.id)({ text: 'Разбор только B' })
+    replies.get(submittedB.submission.id)({ text: JSON.stringify({summary:'Разбор только B',findings:[{anchor:{kind:'block',blockId:'line-b',quote:'Запись только B'},message:'Уточни переход только B.'}]}) })
     await new Promise(setImmediate)
     let stateA = await ok(f, '/api/state', { visitor: a }), stateB = await ok(f, '/api/state', { visitor: b })
     assert.equal(stateA.work.submissions[0].reviewStatus, 'pending')
-    assert.equal(stateB.work.submissions[0].review, 'Разбор только B')
-    replies.get(submittedA.submission.id)({ text: 'Разбор только A' })
+    assert.equal(stateB.work.submissions[0].reviewStatus, 'ready')
+    assert.equal(stateB.work.submissions[0].reviewSummary, 'Наставник выделил места для проверки. Замечания можно обсудить; они не являются доказанной оценкой.')
+    assert.deepEqual(stateB.work.submissions[0].findings.map(item=>[item.anchor.blockId,item.anchor.quote,item.message]), [['line-b','Запись только B','Уточни переход только B.']])
+    assert.deepEqual(stateA.work.submissions[0].findings??[], [])
+    replies.get(submittedA.submission.id)({ text: JSON.stringify({summary:'Разбор только A',findings:[{anchor:{kind:'block',blockId:'line-a',quote:'Запись только A'},message:'Уточни переход только A.'}]}) })
     await new Promise(setImmediate)
     stateA = await ok(f, '/api/state', { visitor: a }); stateB = await ok(f, '/api/state', { visitor: b })
-    assert.equal(stateA.work.submissions[0].review, 'Разбор только A')
-    assert.equal(stateB.work.submissions[0].review, 'Разбор только B')
+    assert.equal(stateA.work.submissions[0].reviewStatus, 'ready')
+    assert.equal(stateA.work.submissions[0].reviewSummary, 'Наставник выделил места для проверки. Замечания можно обсудить; они не являются доказанной оценкой.')
+    assert.deepEqual(stateA.work.submissions[0].findings.map(item=>[item.anchor.blockId,item.anchor.quote,item.message]), [['line-a','Запись только A','Уточни переход только A.']])
+    assert.deepEqual(stateB.work.submissions[0].findings.map(item=>[item.anchor.blockId,item.anchor.quote,item.message]), [['line-b','Запись только B','Уточни переход только B.']])
+    assert.deepEqual(stateA.work.submissions[0].result, submittedA.submission.result)
+    assert.deepEqual(stateB.work.submissions[0].result, submittedB.submission.result)
     assert.deepEqual(stateA.memory.map(event => event.submissionId), [submittedA.submission.id])
     assert.deepEqual(stateB.memory.map(event => event.submissionId), [submittedB.submission.id])
   } finally { for (const resolve of replies.values()) resolve({ text: 'cleanup' }); await f.close() }
@@ -252,7 +261,7 @@ test('shutdown recovers pending reviews in both visitor scopes and never replays
     for (const [identity, answer] of [[a, 'π/3'], [b, 'π/2']]) {
       const work = (await ok(f, '/api/state', { visitor: identity })).work
       await ok(f, '/api/work/save', { visitor: identity, body: { workId: work.id, expectedRevision: 0, document: notebook(`Решение ${answer}`), finalAnswer: answer } })
-      const submitted = await ok(f, '/api/submit', { visitor: identity, body: { workId: work.id, requestId: 'pending-at-restart' } })
+      const submitted = await ok(f, '/api/submit', { visitor: identity, body: { workId: work.id, requestId: 'pending-at-restart', expectedRevision: 1, expectedModeEpoch: 0 } })
       assert.equal(submitted.submission.reviewStatus, 'pending')
       submissions.push(submitted.submission)
     }

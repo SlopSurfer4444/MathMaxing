@@ -1,0 +1,28 @@
+.review-cycle { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line, #dddcd6); text-align: left; }
+.review-cycle h3 { margin: 0 0 10px; font-size: 18px; }
+.review-cycle-note { font-size: 13px; color: var(--muted, #686c67); line-height: 1.55; margin: 8px 0 14px; }
+.review-finding { margin: 12px 0; padding: 14px; border: 1px solid var(--line, #dddcd6); border-radius: 12px; background: var(--paper, #fff); }
+.review-finding.is-withdrawn { border-color: #bdcdbf; }
+.review-finding-status { display: block; font-size: 12px; color: var(--muted, #686c67); margin-bottom: 8px; }
+.review-anchor { display: block; width: 100%; text-align: left; padding: 9px 12px; border: 0; border-left: 3px solid #a2b0a5; background: #f3f5f1; border-radius: 3px; color: inherit; cursor: pointer; overflow-wrap: anywhere; margin-bottom: 12px; }
+.review-anchor > span { font-size: 11px; color: #657168; }
+.review-anchor .math-content { font-size: 14px; }
+.review-cycle .math-content { overflow-wrap: anywhere; }
+.review-suggestion { margin-top: 8px; }
+.review-cycle-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.review-text-button { border: 0; background: none; color: #305c46; padding: 8px 0; text-align: left; font: inherit; cursor: pointer; }
+.review-text-button:disabled { opacity: .5; cursor: default; }
+.review-more, .review-objections { margin-top: 12px; }
+.review-cycle summary { cursor: pointer; padding: 6px 0; font-size: 14px; }
+.review-object-form { margin-top: 12px; }
+.review-object-form label { display: block; font-size: 14px; margin-bottom: 8px; }
+.review-object-form textarea { box-sizing: border-box; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #bdc4be; resize: vertical; font: inherit; background: #fff; color: #252b27; }
+.review-objection { margin-top: 10px; padding: 10px 12px; background: #f5f5f1; border-radius: 8px; font-size: 14px; }
+.review-objection-user { white-space: pre-wrap; overflow-wrap: anywhere; }
+.review-selfcheck { margin-top: 14px; padding: 14px; border-radius: 10px; background: #f3f5ef; }
+.review-selfcheck h4 { margin: 0 0 10px; }
+.review-selfcheck ul { margin: 0; padding-left: 20px; }
+.review-selfcheck li + li { margin-top: 8px; }
+.review-cycle-error { color: #9c392a; font-size: 14px; }
+.review-cycle button:focus-visible, .review-cycle textarea:focus-visible { outline: 2px solid #468361; outline-offset: 3px; }
+@media (max-width: 480px) { .review-finding { padding: 10px; } .review-cycle-actions { align-items: stretch; flex-direction: column; } }

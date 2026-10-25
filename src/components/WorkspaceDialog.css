@@ -1,0 +1,36 @@
+/* This surface is portalled to body, outside the app's palette selectors. */
+body > .workspace-dialog-backdrop { background: rgb(32 39 53 / 27%); }
+.workspace-dialog[role="dialog"] { color: var(--product-ink, #202735); }
+.workspace-dialog .workspace-dialog-material {
+  --glass-tint: rgb(251 252 255 / 86%);
+  --glass-tint: color-mix(in srgb, var(--product-paper, #fffefa) 86%, transparent);
+}
+.workspace-dialog .workspace-dialog-material > p:not([role="alert"]):not([role="status"]):not(.workspace-dialog-note) { color: var(--product-ink, #202735); }
+.workspace-dialog[role="dialog"] .workspace-dialog-note { color: var(--product-muted, #626b7a); }
+.workspace-dialog[role="dialog"] .workspace-help-list,
+.workspace-dialog[role="dialog"] .workspace-help-list strong,
+.workspace-dialog[role="dialog"] .quiet-effects-setting { color: var(--product-ink, #202735); }
+.workspace-dialog[role="dialog"] .quiet-effects-setting { border-color: var(--product-line, #dde0e6); }
+.workspace-dialog[role="dialog"] .quiet-effects-setting input { accent-color: var(--product-action, #3155d9); }
+.workspace-dialog[role="dialog"] .primary-button:where(:not(.danger-button):not(.is-danger)) {
+  background: var(--product-action, #3155d9);
+  border-color: var(--product-action, #3155d9);
+  color: #fff;
+}
+.workspace-dialog[role="dialog"] .primary-button:where(:not(.danger-button):not(.is-danger)):hover:not(:disabled) {
+  background: var(--product-action-hover, #2847b8);
+  border-color: var(--product-action-hover, #2847b8);
+  color: #fff;
+}
+.workspace-dialog[role="dialog"] .outline-button:where(:not(.danger-button):not(.is-danger)) {
+  background: var(--product-paper, #fffefa);
+  color: var(--product-action, #3155d9);
+  border-color: var(--product-line, #dde0e6);
+}
+.workspace-dialog[role="dialog"] .outline-button:where(:not(.danger-button):not(.is-danger)):hover:not(:disabled) {
+  background: var(--product-action-soft, #edf0fc);
+  border-color: var(--product-action, #3155d9);
+}
+.workspace-dialog[role="dialog"] .workspace-dialog-close { color: var(--product-muted, #626b7a); }
+.workspace-dialog[role="dialog"] .workspace-dialog-close:hover { background: var(--product-action-soft, #edf0fc); color: var(--product-ink, #202735); }
+.workspace-dialog[role="dialog"] :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--product-action, #3155d9); outline-offset: 3px; }

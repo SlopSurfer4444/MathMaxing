@@ -1,0 +1,38 @@
+.learning-route{margin:0;color:#172820}
+.learning-route-current{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,.92fr);min-height:298px;box-sizing:border-box;border-radius:13px;background:#fff;box-shadow:0 6px 27px #1b302407}
+.learning-route-current-copy{padding:29px 0 30px 28px;position:relative;z-index:1;min-width:0}
+.learning-route-current h2{font-size:30px;line-height:1.14;letter-spacing:-1.1px;font-weight:650;margin:17px 0 12px;max-width:15ch;text-wrap:balance;overflow-wrap:anywhere}
+.learning-route-current p{line-height:1.75;color:#667168;font-size:13px;max-width:36ch;margin:0}
+.learning-route-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:24px}
+.learning-route-actions .study-text-button{margin:0;font-size:11px!important;color:#657168}
+.learning-route-next{margin-top:28px;min-width:0}
+.learning-route-next-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.learning-route-next-heading h3{font-weight:600;font-size:13px;letter-spacing:-.15px;margin:0}
+.learning-route-next-heading>span{font-size:10px;color:#7d877a}
+.learning-route-next ol{list-style:none;padding:0;margin:0;border-top:1px solid #e2e5db}
+.learning-route-next li{border-bottom:1px solid #e2e5db}
+.learning-route-next li button{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;text-align:left;color:#4f5d4b;padding:13px 0;cursor:pointer;font:inherit}
+.learning-route-next li button:hover:not(:disabled) strong{color:#386957}
+.learning-route-number{flex-shrink:0;width:20px;align-self:flex-start;padding-top:3px;color:#8c9788;font-size:11px}
+.learning-route-next-copy{flex:1;min-width:0}
+.learning-route-next-copy strong{display:block;color:#47564b;font-weight:500;font-size:12px;line-height:1.5}
+.learning-route-next-copy>span{display:block;font-size:11px;line-height:1.5;margin-top:4px;color:#6d786e}
+.learning-route-next li button>svg{color:#899287;flex-shrink:0;transition:transform 160ms ease}
+.learning-route-next li button:hover:not(:disabled)>svg{transform:translateX(2px)}
+.learning-route-next>p{font-size:12px;color:#6d786e;line-height:1.7}
+.learning-route-settings{margin-top:15px;min-width:0}
+.learning-route-settings>summary{font-size:11px;color:#657168;cursor:pointer;padding:9px 0}
+.learning-route-goal,.learning-route-note{line-height:1.75;font-size:12px;color:#667168;margin:10px 0}
+.learning-route-controls{display:flex;align-items:flex-end;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:#657168}
+.learning-route-controls select{display:block;border:1px solid #dce3d6;padding:9px;border-radius:7px;background:#fff;color:#425b47;max-width:100%;margin-top:7px;font:inherit}
+.learning-route-controls>button{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:#47604c;cursor:pointer;font:inherit;padding:10px 0;text-align:left}
+.learning-route button:disabled,.learning-route select:disabled{opacity:.5;cursor:default}
+.learning-route button:focus-visible,.learning-route select:focus-visible,.learning-route summary:focus-visible{outline:3px solid #93b6a2;outline-offset:4px}
+/* The lesson spans both columns; its plan and the real topic actions follow below. */
+.study-home-grid .learning-route{display:contents}
+.study-home-grid .learning-route-current{grid-column:1 / -1}
+.study-home-grid .learning-route-next{grid-column:1;grid-row:2;margin-top:0}
+.study-home-grid .learning-route-settings{grid-column:1;grid-row:3;margin-top:-11px}
+@media(max-width:760px){.learning-route-current{grid-template-columns:minmax(0,1.1fr) minmax(0,.7fr)}.learning-route-current-copy{padding-left:22px}.learning-route-current h2{font-size:27px}}
+@media(max-width:600px){.learning-route-current{display:flex;flex-direction:column;min-height:0;width:100%}.learning-route-current-copy{padding:21px 22px 24px}.learning-route-current h2{font-size:29px;max-width:17ch;margin-top:12px}.learning-route-current p{max-width:100%}.learning-route-actions{margin-top:20px;gap:16px}.learning-route-next{width:100%}.learning-route-controls{align-items:flex-start;flex-direction:column}.learning-route-settings{width:100%}.study-home-grid .learning-route-settings{margin-top:-12px}}
+@media(prefers-reduced-motion:reduce){.learning-route-next li button>svg{transition:none}.learning-route-next li button:hover:not(:disabled)>svg{transform:none}}

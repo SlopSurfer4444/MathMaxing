@@ -1,0 +1,18 @@
+.exam-quote-source-dialog{box-sizing:border-box;width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;margin:auto;padding:25px 28px;border:1px solid #d8d9d4;border-radius:18px;background:#fffefa;color:#26302e;box-shadow:0 24px 90px #20293424;font-family:inherit}
+.exam-quote-source-dialog::backdrop{background:#20293440;backdrop-filter:blur(5px)}
+.exam-quote-source-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.exam-quote-source-heading h2{margin:0;font-size:22px;line-height:1.3;letter-spacing:-.025em}
+.exam-quote-source-dialog button{font:inherit;font-size:14px;line-height:1.4;padding:10px 15px;border:1px solid #d8d9d4;border-radius:9px;background:#fffefa;color:inherit;cursor:pointer}
+.exam-quote-source-heading>button{display:grid;place-items:center;flex:none;width:34px;height:34px;margin:-4px -8px 0 0;padding:6px;border-color:transparent;background:transparent}
+.exam-quote-source-note{margin:13px 0 0;font-size:14px;line-height:1.65;color:#606963}
+.exam-quote-source-meta{margin:17px 0 0;font-size:12px;line-height:1.6;color:#606963}
+.exam-quote-source-text{margin:11px 0 0;padding:16px 18px;border-left:3px solid #c3cdb8;border-radius:0 8px 8px 0;background:#f3f5ee;font-size:15px;line-height:1.8;overflow-wrap:anywhere}
+.exam-quote-source-text>.math-content{margin:0}
+.exam-quote-source-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:23px}
+.exam-quote-source-actions .exam-quote-source-close{background:#455cd0;border-color:#455cd0;color:white}
+.exam-quote-source-dialog button:hover{border-color:#a9b6e9}
+.exam-quote-source-dialog button:focus-visible{outline:3px solid #455cd0;outline-offset:3px}
+@media(max-width:500px){.exam-quote-source-dialog{padding:20px}.exam-quote-source-heading h2{font-size:20px}.exam-quote-source-text{padding:13px}.exam-quote-source-actions{gap:8px}.exam-quote-source-actions button{padding:10px 12px}}
+
+.exam-quote-source-text{position:relative;padding-left:22px}
+.exam-quote-source-text::before{content:'';position:absolute;inset:4px auto 4px 0;width:7px;border:2px solid #3155d9;border-right:0;border-radius:2px 0 0 2px;pointer-events:none}

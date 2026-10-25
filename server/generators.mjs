@@ -63,8 +63,8 @@ export function generateSelectionExercise(seed){
       substitutionMath:integers.length?`${pi(start)}+${pi(step)}\\cdot(${integers[0]})=${pi(read(values[0]))}`:null}
   })
   const equations=selectionSteps.map(s=>s.seriesMath).join('\\quad\\text{или}\\quad ')
-  return {id:`selection-v1-${seed}`,title:'Отбор корней',kind:'roots',prompt:'Выпиши все корни этих серий на указанном отрезке.',math:`${equations},\\quad k\\in\\mathbb Z,\\quad ${interval}`,answerFormat:'Корни через точку с запятой, например: -π; 0; π/3',series,interval,roots,
+  return {id:`selection-v1-${seed}`,title:'Отбор корней',kind:'roots',prompt:'Каждая формула описывает целую цепочку подходящих углов. Оставь только углы внутри указанных границ и выпиши их без повторов.',math:`${equations},\\quad k\\in\\mathbb Z,\\quad ${interval}`,answerFormat:'Корни через точку с запятой, например: -π; 0; π/3',series,interval,roots,
     selectionSteps,
-    explanation:`В каждой серии вычти начальный угол из обеих границ и раздели на положительный шаг. ${selectionSteps.map(s=>`Для $${s.seriesMath}$ получаем $${s.boundsMath}$; целые значения: ${s.integers.length?s.integers.join(', '):'нет'}.`).join(' ')} ${selectionSteps[0].substitutionMath?`Например, $${selectionSteps[0].substitutionMath}$. `:''}Объедини корни и убери повторы. Получается: $${roots.map(r=>pi(read(r))).join('; ')}$.`,materialIds:['interval'],
+    explanation:`Нужно выяснить, какие целые числа шагов k держат угол внутри границ. Сначала убираем начальный сдвиг, затем считаем шаги. В каждой серии вычти начальный угол из обеих границ и раздели на положительный шаг. ${selectionSteps.map(s=>`Для $${s.seriesMath}$ получаем $${s.boundsMath}$; целые значения: ${s.integers.length?s.integers.join(', '):'нет'}.`).join(' ')} ${selectionSteps[0].substitutionMath?`Например, $${selectionSteps[0].substitutionMath}$. `:''}Объедини корни и убери повторы. Получается: $${roots.map(r=>pi(read(r))).join('; ')}$.`,materialIds:['interval'],
     generation:{packageVersion:1,generatorVersion:1,family:'G4',seed,parameters:{series,lower:key(lower),upper:key(upper)},rules:['integer-parameter-bounds','inclusive-endpoints','union-deduplication']}}
 }

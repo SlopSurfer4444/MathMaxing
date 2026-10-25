@@ -1,0 +1,13 @@
+.math-content .tutor-heading{font-family:inherit;font-size:1.1em;line-height:1.4;font-weight:650;color:inherit;margin:1em 0 .45em;letter-spacing:normal}
+.math-content .tutor-heading:first-child{margin-top:0}
+.math-content .tutor-paragraph{margin:0 0 .75em;white-space:pre-wrap;min-width:0}
+.math-content .tutor-paragraph:last-child{margin-bottom:0}
+.math-content .tutor-list{margin:.6em 0 .9em;padding-inline-start:1.65em;white-space:normal;list-style-position:outside}
+.math-content ul.tutor-list{list-style-type:disc}
+.math-content ol.tutor-list{list-style-type:decimal}
+.math-content .tutor-list>li{display:list-item;padding-inline-start:.2em;margin:.35em 0}
+.math-content .tutor-list .tutor-paragraph{margin-bottom:.35em}
+.math-content .tutor-inline-code{font-family:Consolas,monospace;background:#eef1e9;border-radius:3px;padding:.1em .25em}
+.math-content .tutor-paragraph>.math-display{font-size:1.13em;vertical-align:middle;max-width:100%;margin:0 2px;line-height:1.5}
+.math-content .tutor-paragraph>.math-display.is-display{display:block;white-space:normal;overflow-x:auto;padding:8px 0;margin:5px 0;font-size:1.3em}
+.math-content .tutor-code{max-width:100%;box-sizing:border-box}

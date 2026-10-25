@@ -1,7 +1,9 @@
 import { convertLatexToMarkup } from 'mathlive'
-import { Fragment, type ReactNode } from 'react'
+import { createElement, Fragment, type ReactNode } from 'react'
 import { BookOpen, ArrowUpRight } from 'lucide-react'
 import { materials } from '../materials'
+import { parseMathMarkdown, type MarkdownBlock } from '../math-markdown'
+import './math-content.css'
 
 export function MathText({ value, display = false }: { value: string; display?: boolean }) {
   let html = ''
@@ -11,10 +13,10 @@ export function MathText({ value, display = false }: { value: string; display?: 
 }
 
 export function MathContent({ text, renderAnnotation, onOpenMaterial, exercises, onOpenExercise }: { text: string; renderAnnotation?(index: number): ReactNode; onOpenMaterial?(id: string): void; exercises?: { id: string; title: string }[]; onOpenExercise?(id: string): void }) {
-  const pattern = /(```[^\n]*\n[\s\S]*?```|\*\*[\s\S]+?\*\*|\[\[exercise:[^\]\n]+\]\]|\[\[material:[^\]\n]+\]\]|\[\[annotation:\d+\]\]|\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^\n$]+?\$)/g
+  const pattern = /(`[^`\n]+`|\*\*[\s\S]+?\*\*|\[\[exercise:[^\]\n]+\]\]|\[\[material:[^\]\n]+\]\]|\[\[annotation:\d+\]\]|\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^\n$]+?\$)/g
   const render = (value: string): ReactNode[] => { const pieces = value.split(pattern)
   return pieces.map((piece, i) => {
-    if (piece.startsWith('```')) return <pre className="tutor-code" key={i}><code>{piece.replace(/^```[^\n]*\n/, '').slice(0, -3).trimEnd()}</code></pre>
+    if (piece.startsWith('`') && piece.endsWith('`')) return <code className="tutor-inline-code" key={i}>{piece.slice(1, -1)}</code>
     if (piece.startsWith('**') && piece.endsWith('**')) return <strong key={i}>{render(piece.slice(2, -2))}</strong>
     const exercise = piece.match(/^\[\[exercise:([^\]]+)\]\]$/)
     if (exercise) {
@@ -41,5 +43,14 @@ export function MathContent({ text, renderAnnotation, onOpenMaterial, exercises,
     return <MathText key={i} value={piece.slice(length, -length)} display={display} />
   })
   }
-  return <div className="math-content">{render(text)}</div>
+  const renderBlocks = (blocks: MarkdownBlock[]): ReactNode[] => blocks.map((block, i) => {
+    if (block.kind === 'code') return <pre className="tutor-code" key={i}><code>{block.text}</code></pre>
+    if (block.kind === 'heading') return createElement(`h${block.level}`, { key: i, className: 'tutor-heading' }, render(block.text))
+    if (block.kind === 'list') {
+      const children = block.items.map((item, j) => <li key={j}>{renderBlocks(item)}</li>)
+      return block.ordered ? <ol className="tutor-list" start={block.start} key={i}>{children}</ol> : <ul className="tutor-list" key={i}>{children}</ul>
+    }
+    return <div className="tutor-paragraph" key={i}>{render(block.text)}</div>
+  })
+  return <div className="math-content">{renderBlocks(parseMathMarkdown(text))}</div>
 }

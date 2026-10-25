@@ -7,12 +7,14 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { closeHistory } from '@tiptap/pm/history'
 import { MathfieldElement } from 'mathlive'
 import { Copy, Keyboard, MessageSquarePlus, Plus, Trash2 } from 'lucide-react'
+import type { AnswerPart } from '../answer-bindings'
+import { preferredScrollBehavior } from '../motion'
 import './notebook-controls.css'
 
 // This notebook edits notation only. MathLive must never create a compute engine.
 MathfieldElement.computeEngine = null
 MathfieldElement.soundsDirectory = null
-MathfieldElement.fontsDirectory = '/mathlive/fonts'
+MathfieldElement.fontsDirectory = `${import.meta.env.BASE_URL}mathlive/fonts`
 
 export interface NotebookSelection {
   blockId: string
@@ -38,6 +40,8 @@ export interface EditorBridge {
   focusBlock(id: string): void
   captureReturnAnchor(): { blockId?: string; position?: number }
   restoreReturnAnchor(anchor: { blockId?: string; position?: number }): void
+  setAnswerPart(blockId: string, part: AnswerPart, assigned: boolean): void
+  insertAnswer(part: AnswerPart, kind?: 'math' | 'text'): void
 }
 
 export interface NotebookEditorProps {
@@ -48,12 +52,17 @@ export interface NotebookEditorProps {
   onRequestAnnotation?(selection: NotebookSelection): void
   /** Explicit whole-formula transfer; the notebook does not infer or simplify it. */
   onUseAsGeneralAnswer?(latex: string): void
+  /** Answers are explicit attributes of whole notebook blocks, saved with the document. */
+  answersEnabled?: boolean
   annotatedBlockIds?: string[]
 }
 
 const newId = () => crypto.randomUUID()
 const identifiable = new Set(['paragraph', 'heading', 'mathBlock'])
 const annotationKey = new PluginKey<Set<string>>('notebookAnnotations')
+const answerPartsOf = (attrs: Record<string, unknown> | undefined): AnswerPart[] =>
+  ['a', 'b'].filter(part => Array.isArray(attrs?.answerParts) && attrs.answerParts.includes(part)) as AnswerPart[]
+const answerLabel = (parts: AnswerPart[]) => parts.map(part => `Ответ ${part === 'a' ? 'а' : 'б'})`).join(' · ')
 
 const AnnotationDecoration = Extension.create({
   name: 'annotationDecoration',
@@ -91,9 +100,10 @@ function withBlockIds(content: JSONContent): JSONContent {
     let attrs = node.attrs
     if (identifiable.has(node.type ?? '')) {
       let id = typeof attrs?.id === 'string' ? attrs.id : ''
-      if (!id || seen.has(id)) id = newId()
+      const duplicate = !!id && seen.has(id)
+      if (!id || duplicate) id = newId()
       seen.add(id)
-      attrs = { ...attrs, id }
+      attrs = { ...attrs, id, ...(duplicate ? { answerParts: [] } : {}) }
     }
     return { ...node, ...(attrs ? { attrs } : {}), ...(node.content ? { content: node.content.map(visit) } : {}) }
   }
@@ -111,6 +121,23 @@ const BlockIdentity = Extension.create({
           parseHTML: element => element.getAttribute('data-block-id'),
           renderHTML: attributes => ({ 'data-block-id': attributes.id }),
         },
+        answerParts: {
+          default: [],
+          parseHTML: element => (element.getAttribute('data-answer-parts') ?? '').split(' ').filter(part => part === 'a' || part === 'b'),
+          renderHTML: attributes => {
+            const parts = answerPartsOf(attributes)
+            return parts.length ? { 'data-answer-parts': parts.join(' '), 'data-answer-label': answerLabel(parts) } : {}
+          },
+        },
+      },
+    }, {
+      types: ['paragraph', 'heading', 'mathBlock'],
+      attributes: {
+        photoSource: {
+          default: null,
+          parseHTML: element => element.getAttribute('data-photo-source'),
+          renderHTML: attributes => attributes.photoSource ? { 'data-photo-source': attributes.photoSource } : {},
+        },
       },
     }]
   },
@@ -123,9 +150,11 @@ const BlockIdentity = Extension.create({
         state.doc.descendants((node, position) => {
           if (!identifiable.has(node.type.name)) return
           let id = typeof node.attrs.id === 'string' ? node.attrs.id : ''
-          if (!id || seen.has(id)) {
+          const duplicate = !!id && seen.has(id)
+          if (!id || duplicate) {
             id = newId()
-            transaction.setNodeMarkup(position, undefined, { ...node.attrs, id })
+            // Enter/paste must not accidentally designate the new row as an answer.
+            transaction.setNodeMarkup(position, undefined, { ...node.attrs, id, ...(duplicate ? { answerParts: [] } : {}) })
           }
           seen.add(id)
         })
@@ -145,7 +174,21 @@ interface MathRuntime {
   annotate(selection: NotebookSelection): void
   canUseAsGeneralAnswer(): boolean
   useAsGeneralAnswer(latex: string): void
+  answersEnabled(): boolean
+  setAnswerPart(blockId: string, part: AnswerPart, assigned: boolean): void
   refreshControls(): void
+}
+
+function AnswerPartControls({ parts, onChange }: { parts: AnswerPart[]; onChange(part: AnswerPart, assigned: boolean): void }) {
+  return <>{(['a', 'b'] as AnswerPart[]).map(part => {
+    const assigned = parts.includes(part)
+    const letter = part === 'a' ? 'а' : 'б'
+    return <button key={part} type="button" className="notebook-answer-toggle" aria-pressed={assigned}
+      aria-label={assigned ? `Убрать отметку ответа ${letter})` : `Это ответ ${letter})`}
+      title={assigned ? `Убрать отметку ответа ${letter})` : `Обозначить всю строку как ответ ${letter})`}
+      onPointerDown={event => event.preventDefault()}
+      onClick={() => onChange(part, !assigned)}>{assigned ? `Ответ ${letter}) ✓` : `Это ответ ${letter})`}</button>
+  })}</>
 }
 
 function rememberMath(field: MathfieldElement, id: string, runtime: MathRuntime) {
@@ -371,12 +414,16 @@ function MathBlockView(props: NodeViewProps) {
   return <NodeViewWrapper
     className={`math-block${props.selected ? ' is-selected' : ''}`}
     data-block-id={id}
+    data-answer-parts={answerPartsOf(props.node.attrs).join(' ') || undefined}
     contentEditable={false}
   >
     <div className="math-block__header">
       <span className="math-block__label">Формула</span>
+      {answerPartsOf(props.node.attrs).length > 0 && <span className="notebook-answer-marker">{answerLabel(answerPartsOf(props.node.attrs))}</span>}
       <div className="math-block__actions">
-        {runtime.canUseAsGeneralAnswer?.() && <button type="button" className="math-block__general-answer"
+        {runtime.answersEnabled() && <AnswerPartControls parts={answerPartsOf(props.node.attrs)}
+          onChange={(part, assigned) => runtime.setAnswerPart(id, part, assigned)} />}
+        {!runtime.answersEnabled() && runtime.canUseAsGeneralAnswer?.() && <button type="button" className="math-block__general-answer"
           aria-label="Использовать всю формулу как общее решение" title="Добавить всю запись в общее решение"
           disabled={!String(props.node.attrs.latex ?? '').trim()}
           onPointerDown={event => event.preventDefault()}
@@ -428,6 +475,14 @@ const MathBlock = Node.create<{ runtime: MathRuntime }>({
     return {
       id: { default: null, parseHTML: element => element.getAttribute('data-block-id') },
       latex: { default: '', parseHTML: element => element.getAttribute('data-latex') ?? '' },
+      answerParts: {
+        default: [],
+        parseHTML: element => (element.getAttribute('data-answer-parts') ?? '').split(' ').filter(part => part === 'a' || part === 'b'),
+        renderHTML: attributes => {
+          const parts = answerPartsOf(attributes)
+          return parts.length ? { 'data-answer-parts': parts.join(' ') } : {}
+        },
+      },
     }
   },
   parseHTML() { return [{ tag: 'div[data-math-block]' }] },
@@ -465,8 +520,8 @@ function textSnapshot(editor: Editor): NotebookSelection | null {
 }
 
 type FloatingControl =
-  | { kind: 'quote'; selection: NotebookSelection; left: number; top: number }
-  | { kind: 'insert'; blockId: string; left: number; top: number }
+  | { kind: 'quote'; selection: NotebookSelection; answerParts: AnswerPart[]; left: number; top: number }
+  | { kind: 'insert'; blockId: string; answerParts: AnswerPart[]; left: number; top: number }
 
 function clampControlLeft(left: number, width: number) {
   return Math.max(8, Math.min(left, window.innerWidth - width - 8))
@@ -515,6 +570,8 @@ export function NotebookEditor(props: NotebookEditorProps) {
     },
     canUseAsGeneralAnswer: () => !!callbacks.current.onUseAsGeneralAnswer,
     useAsGeneralAnswer: latex => callbacks.current.onUseAsGeneralAnswer?.(latex),
+    answersEnabled: () => !!callbacks.current.answersEnabled,
+    setAnswerPart: (blockId, part, assigned) => bridgeRef.current?.setAnswerPart(blockId, part, assigned),
     refreshControls: () => refreshControls.current(),
   }
   const runtime = runtimeRef.current
@@ -560,10 +617,16 @@ export function NotebookEditor(props: NotebookEditorProps) {
       if (selection?.quote.trim()) {
         const rect = quoteCoordinates(editor, selection, runtime)
         if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) { setControl(null); return }
-        const top = rect.top >= 50 ? rect.top - 44 : rect.bottom + 8
-        setControl({ kind: 'quote', selection,
-          left: clampControlLeft((rect.left + rect.right) / 2 - 82, 164),
-          top: Math.max(8, Math.min(top, window.innerHeight - 48)),
+        const toolbarHeight = callbacks.current.answersEnabled && selection.kind === 'text' ? 100 : 44
+        const top = rect.top >= toolbarHeight + 8 ? rect.top - toolbarHeight : rect.bottom + 8
+        let answerParts: AnswerPart[] = []
+        editor.state.doc.descendants(node => {
+          if (node.attrs.id === selection.blockId) answerParts = answerPartsOf(node.attrs)
+        })
+        const width = callbacks.current.answersEnabled && selection.kind === 'text' ? 360 : 164
+        setControl({ kind: 'quote', selection, answerParts,
+          left: clampControlLeft((rect.left + rect.right) / 2 - width / 2, width),
+          top: Math.max(8, Math.min(top, window.innerHeight - toolbarHeight - 8)),
         })
         return
       }
@@ -572,15 +635,16 @@ export function NotebookEditor(props: NotebookEditorProps) {
         setControl(null); return
       }
       const paragraph = textSelection.$from.parent
-      if (paragraph.type.name !== 'paragraph' || !paragraph.attrs.id) { setControl(null); return }
+      if (!['paragraph', 'heading'].includes(paragraph.type.name) || !paragraph.attrs.id) { setControl(null); return }
       const element = editor.view.nodeDOM(textSelection.$from.before())
       if (!(element instanceof HTMLElement)) { setControl(null); return }
       const rect = element.getBoundingClientRect()
       const caret = editor.view.coordsAtPos(textSelection.from)
       if (caret.bottom < 0 || caret.top > window.innerHeight) { setControl(null); return }
-      setControl({ kind: 'insert', blockId: paragraph.attrs.id,
-        left: clampControlLeft(rect.right - 105, 105),
-        top: Math.max(8, Math.min(caret.bottom + 3, window.innerHeight - 36)),
+      const width = callbacks.current.answersEnabled ? 340 : 105
+      setControl({ kind: 'insert', blockId: paragraph.attrs.id, answerParts: answerPartsOf(paragraph.attrs),
+        left: clampControlLeft(rect.right - width, width),
+        top: Math.max(8, Math.min(caret.bottom + 3, window.innerHeight - (callbacks.current.answersEnabled ? 110 : 36))),
       })
     }
     const schedule = () => {
@@ -665,6 +729,34 @@ export function NotebookEditor(props: NotebookEditorProps) {
       focus: () => { editor.commands.focus() },
       canUndo: () => editor.can().undo(),
       canRedo: () => editor.can().redo(),
+      setAnswerPart: (blockId, part, assigned) => {
+        if (!callbacks.current.answersEnabled) return
+        let position: number | undefined
+        editor.state.doc.descendants((node, pos) => {
+          if (identifiable.has(node.type.name) && node.attrs.id === blockId) position = pos
+        })
+        if (position === undefined) return
+        const node = editor.state.doc.nodeAt(position)!
+        const parts = answerPartsOf(node.attrs)
+        if (parts.includes(part) === assigned) return
+        const next = assigned ? [...parts, part] : parts.filter(value => value !== part)
+        editor.view.dispatch(closeHistory(editor.state.tr).setNodeMarkup(position, undefined, { ...node.attrs, answerParts: next }))
+        editor.view.dispatch(closeHistory(editor.state.tr))
+      },
+      insertAnswer: (part, kind = 'math') => {
+        if (!callbacks.current.answersEnabled) return
+        const id = newId()
+        const boundary = editor.state.doc.content.size
+        if (kind === 'math') runtime.pendingFocus = { id }
+        const node = kind === 'math'
+          ? editor.schema.nodes.mathBlock.create({ id, latex: '', answerParts: [part] })
+          : editor.schema.nodes.paragraph.create({ id, answerParts: [part] })
+        const transaction = closeHistory(editor.state.tr).insert(boundary, node)
+        if (kind === 'text') transaction.setSelection(TextSelection.create(transaction.doc, boundary + 1))
+        editor.view.dispatch(transaction.scrollIntoView())
+        editor.view.dispatch(closeHistory(editor.state.tr))
+        if (kind === 'text') editor.view.focus()
+      },
       getContent: () => editor.getJSON(),
       replaceContent: content => {
         runtime.activeField = null
@@ -676,7 +768,7 @@ export function NotebookEditor(props: NotebookEditorProps) {
       focusBlock: id => {
         const field = runtime.fields.get(id)
         if (field) {
-          field.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          field.scrollIntoView({ block: 'center', behavior: preferredScrollBehavior() })
           field.focus()
           return
         }
@@ -713,17 +805,21 @@ export function NotebookEditor(props: NotebookEditorProps) {
     callbacks.current.onReady(bridge)
   }, [editor, runtime])
 
-  return <div className="notebook-editor" ref={container} data-chat-enabled={!!props.onRequestAnnotation}>
+  return <div className="notebook-editor" ref={container} data-chat-enabled={!!props.onRequestAnnotation} data-answers-enabled={!!props.answersEnabled}>
     <EditorContent editor={editor} />
-    {props.onRequestAnnotation && control?.kind === 'quote' && <div className="editor-context-action" contentEditable={false} role="toolbar" aria-label="Действия с выделенным фрагментом"
+    {(props.onRequestAnnotation || props.answersEnabled) && control?.kind === 'quote' && <div className="editor-context-action" contentEditable={false} role="toolbar" aria-label="Действия с выделенным фрагментом"
       style={{ position: 'fixed', left: control.left, top: control.top }}>
-      <button type="button" className="editor-context-action__button" onMouseDown={event => event.preventDefault()}
-        onClick={() => { runtime.annotate(control.selection); setControl(null) }}><MessageSquarePlus size={14} /> Добавить в чат</button>
+      {props.answersEnabled && control.selection.kind === 'text' && <AnswerPartControls parts={control.answerParts}
+        onChange={(part, assigned) => runtime.setAnswerPart(control.selection.blockId, part, assigned)} />}
+      {props.onRequestAnnotation && <button type="button" className="editor-context-action__button" onMouseDown={event => event.preventDefault()}
+        onClick={() => { runtime.annotate(control.selection); setControl(null) }}><MessageSquarePlus size={14} /> Добавить в чат</button>}
     </div>}
     {control?.kind === 'insert' && <div className="editor-local-insert" contentEditable={false}
       style={{ position: 'fixed', left: control.left, top: control.top }}>
       <button type="button" aria-label="Добавить формулу рядом с этой строкой" onMouseDown={event => event.preventDefault()}
         onClick={() => { bridgeRef.current?.insertMathAfterBlock(control.blockId); setControl(null) }}><Plus size={12} /> Формула</button>
+      {props.answersEnabled && <AnswerPartControls parts={control.answerParts}
+        onChange={(part, assigned) => runtime.setAnswerPart(control.blockId, part, assigned)} />}
     </div>}
   </div>
 }

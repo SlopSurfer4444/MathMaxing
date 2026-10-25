@@ -1,0 +1,22 @@
+.topic-graph { margin: 22px 0 0; color: #657364; max-width: 600px; }
+.topic-graph svg { display: block; width: 100%; height: auto; overflow: visible; }
+.topic-graph text { font: 13px system-ui, sans-serif; fill: currentColor; }
+.topic-graph-grid { stroke: #edf0e9; stroke-width: 1; }
+.topic-graph-axis { fill: none; stroke: #859180; stroke-width: 1.5; }
+.topic-graph-line { fill: none; stroke: #55826b; stroke-width: 3; stroke-linejoin: round; }
+.topic-graph-point { fill: #55826b; stroke: #fff; stroke-width: 1.8; }
+.topic-graph details { font-size: 12px; margin-top: 14px; }
+.topic-graph summary { cursor: pointer; color: #718069; width: fit-content; }
+.topic-graph table { border-collapse: collapse; width: 100%; margin-top: 12px; font-variant-numeric: tabular-nums; font-size: 13px; }
+.topic-graph caption { text-align: left; color: #7a8476; margin-bottom: 8px; font-size: 12px; }
+.topic-graph th, .topic-graph td { text-align: left; border-bottom: 1px solid #e8e9e5; padding: 8px 10px; overflow-wrap: anywhere; }
+.topic-graph th { font-weight: 500; color: #596c53; }
+.topic-notation { margin: 15px 0 0; font-size: 13px; line-height: 1.7; }
+.topic-notation summary { cursor: pointer; color: #5d775d; width: fit-content; }
+.topic-notation p { max-width: 60ch; color: #727c6e; }
+.percentage-work .topic-interval-answer { font-size: 19px; }
+@media (max-width: 440px) {
+  .topic-graph text { font-size: 15px; }
+  .topic-graph table { font-size: 12px; }
+  .topic-graph th, .topic-graph td { padding: 7px 6px; }
+}

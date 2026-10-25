@@ -69,3 +69,13 @@ test('quadratic substitution requires all algebraic roots before range filtering
   assert.equal(learningCheck(checks[1], '1/2').status, 'correct')
   assert.equal(learningCheck(checks[2], 'pi/6;5pi/6').status, 'correct')
 })
+
+test('circle probes distinguish cosine from sine and invalidate the previous repeated probe', () => {
+  const [cosine, sine] = learningEpisodes.find(episode => episode.id === 'K3')!.checks
+  assert.equal(cosine.id, 'K3-a-v3')
+  assert.match(cosine.prompt, /косинус/)
+  assert.match(cosine.prompt, /слева/)
+  assert.equal(learningCheck(cosine, '-1').status, 'correct')
+  assert.equal(learningCheck(cosine, '0').status, 'incorrect')
+  assert.match(sine.prompt + sine.options?.join(''), /7\\pi\/6/)
+})

@@ -1,0 +1,4 @@
+.home-geometry{position:relative;min-width:0;overflow:hidden;align-self:stretch;pointer-events:none}
+.home-geometry>svg{position:absolute;left:0;top:50%;width:142%;max-width:none;height:auto;transform:translate(11%,-47%);overflow:visible}
+.home-geometry-plane{fill:#4249d8}.home-geometry-core{fill:#f2b07e}.home-geometry-cut{fill:#fff}.home-geometry-line{fill:none;stroke:#172820;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.home-geometry-lens{fill:#ffffff2b;stroke:#ffffffb8;stroke-width:1;filter:drop-shadow(0 4px 8px #26342a10)}
+@media(max-width:600px){.home-geometry{order:-1;height:92px;background:#fbfbf8}.home-geometry>svg{width:340px;left:auto;right:0;top:-96px;transform:translate(22%,0)}}

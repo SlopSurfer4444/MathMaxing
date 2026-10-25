@@ -1,6 +1,6 @@
 import { learnerStorage } from '../visitor-session'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, BookOpen, Compass, Sparkles } from 'lucide-react'
+import { ArrowRight, BookOpen } from 'lucide-react'
 import type { Problem, RootResult, WorkSummary } from '../api-types'
 import { MathAnswer } from './MathAnswer'
 import { MathText } from './MathContent'
@@ -9,21 +9,30 @@ import { learningEpisodes, type EpisodeProgress } from '../learning-content'
 type Entry = 'explain' | 'refresh' | 'solve'
 export function LearningHome({learning, solo, busy, works, problems = [], activeWorkId, onEntry, onResume, onMaterials, onOpenWork, onEpisode,resumeLabel}: {
   learning: {entry: Entry | null; episodeId: string | null; progress: Record<string, EpisodeProgress>}; solo: boolean; busy: boolean; works: WorkSummary[]; activeWorkId?: string;
-  problems?: Problem[]; resumeLabel?: string; onEntry(entry: Entry): void; onResume(): void; onMaterials(): void; onOpenWork(id: string): void; onEpisode(id: string): void;
+  problems?: Problem[]; resumeLabel?: string; onEntry(entry: Entry): void; onResume(): void; onMaterials(): void; onOpenWork(id: string): void; onEpisode(id: string, intent?: 'practice'): void;
 }) {
   const episode = learningEpisodes.find(item => item.id === learning.episodeId)
+  const canResume = !!learning.entry || !!episode
   return <section className="learning-home" aria-label="Начало занятия">
-    <span className="eyebrow">ТРИГОНОМЕТРИЧЕСКИЕ УРАВНЕНИЯ</span>
-    <h1>Разобраться. Попробовать.<br/>Решить самому.</h1>
-    <p className="learning-intro">Начни с того, что нужно тебе сейчас. Можно остановиться в любой момент и продолжить позже.</p>
-    {learning.entry && <button className="learning-resume" disabled={busy} onClick={onResume}><span><small>ПРОДОЛЖИТЬ</small><strong>{resumeLabel ?? (episode && !solo ? episode.title : solo ? 'Моя самостоятельная попытка' : 'Моё решение')}</strong></span><ArrowRight size={20}/></button>}
-    <div className="learning-entries">
-      <button disabled={busy} onClick={() => onEntry('explain')}><BookOpen size={23}/><h2>Объясните с начала</h2><p>Что такое синус, как читать запись и откуда берутся решения.</p><span>{solo ? 'Сохранить попытку и учиться' : 'Начать с основ'} <ArrowRight size={15}/></span></button>
-      <button disabled={busy} onClick={() => onEntry('refresh')}><Compass size={23}/><h2>Немного помню</h2><p>Короткая проба покажет, к чему полезно вернуться.</p><span>{solo ? 'Сохранить попытку и повторить' : 'Проверить, что помню'} <ArrowRight size={15}/></span></button>
-      <button disabled={busy} onClick={() => onEntry('solve')}><Sparkles size={23}/><h2>Хочу решать</h2><p>Новый вариант без подсказок. Помощь можно открыть позже.</p><span>Решить самостоятельно <ArrowRight size={15}/></span></button>
+    <span className="eyebrow">ПРОФИЛЬНЫЙ УРОВЕНЬ · ФОРМАТ 2026</span>
+    <h1>Тригонометрия в задании №13 ЕГЭ</h1>
+    <p className="learning-intro">Находи все решения уравнения в пункте а) и отбирай корни на отрезке в пункте б).</p>
+    <div className="learning-start">
+      <p>{canResume ? 'Вернись к тому месту, где остановился.' : 'Первый шаг — понять синус на рисунке и ответить на один вопрос.'}</p>
+      <button className="primary-button learning-home-primary" disabled={busy} onClick={canResume ? onResume : () => onEntry('explain')}>
+        {canResume ? `Продолжить: ${resumeLabel ?? (episode && !solo ? episode.title : 'моё решение')}` : 'Начать с синуса'} <ArrowRight size={18}/>
+      </button>
+      <div className="learning-shortcuts">
+        <details className="learning-repeat"><summary>Повторить один шаг</summary><div>
+          {[['K3', 'Путаю синус и косинус'], ['K5', 'Не понимаю запись всех корней'], ['K6', 'Ошибаюсь при отборе на отрезке'], ['K7', 'Теряю решения при преобразовании']].map(([id, title]) => <button type="button" disabled={busy} key={id} onClick={() => onEpisode(id, 'practice')}>{title} <ArrowRight size={15}/></button>)}
+          <button type="button" disabled={busy} onClick={() => onEntry('refresh')}>Не знаю, где пробел — короткая проба <ArrowRight size={15}/></button>
+          <details className="learning-topic-map"><summary>Все учебные темы</summary><div>{learningEpisodes.map(item => <button disabled={busy} key={item.id} onClick={() => onEpisode(item.id)}>{item.title}</button>)}</div></details>
+        </div></details>
+        <button type="button" className="learning-solo-entry" disabled={busy} onClick={() => onEntry('solve')}>Решать без подсказок <ArrowRight size={15}/></button>
+      </div>
     </div>
-    <div className="learning-library"><div><h2>Материалы всегда рядом</h2><p>Формулы, рисунки и объяснения — можно идти по ссылкам или обсуждать с наставником.</p></div><button className="outline-button" disabled={busy} onClick={onMaterials}>{solo ? 'Сохранить попытку и открыть материалы' : 'Открыть материалы'} <BookOpen size={16}/></button></div>
-    {!solo && <details className="learning-topic-map"><summary>Выбрать тему самому</summary><div>{learningEpisodes.map(item => <button disabled={busy} key={item.id} onClick={() => onEpisode(item.id)}>{item.title}{learning.progress[item.id]?.skipped && <small>Пропущено</small>}</button>)}</div></details>}
+    <details className="learning-scope"><summary>Какие задачи здесь есть</summary><p>Двойной угол и разложение на множители; уравнения, сводящиеся к квадратному относительно синуса; равенство синусов. Отдельно — отбор корней на отрезке. Это часть тригонометрических задач формата 2026.</p></details>
+    <button className="learning-material-link" disabled={busy} onClick={onMaterials}><BookOpen size={16}/>Формулы и объяснения</button>
     {!!works.length && <details className="recent-work"><summary>Недавние решения</summary>{works.slice(0,5).map(item => {
       const problem = problems.find(candidate => candidate.id === item.problemId)
       return <button key={item.id} disabled={busy} onClick={() => onOpenWork(item.id)}><span><strong>{problem?.title ?? 'Решение задачи'}{item.id === activeWorkId ? ' · текущее' : ''}</strong>{problem && <MathText value={problem.equation}/>}<small>{item.mode === 'solo' ? 'Самостоятельно' : item.mode === 'review' ? 'Разбор' : 'С помощью'}</small></span><time dateTime={item.updatedAt}>{new Date(item.updatedAt).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time></button>

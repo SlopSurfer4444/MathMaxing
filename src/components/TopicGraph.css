@@ -1,0 +1,11 @@
+/* Keep SVG labels at their intended size; narrow screens scroll the graph
+   locally instead of shrinking its data, axes and labels together. */
+.topic-graph { min-width: 0; width: 100%; }
+.topic-graph-scroll { width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
+.topic-graph-scroll > svg { min-width: 540px; }
+.topic-graph-scroll > svg text { font-size: 15px; }
+.topic-graph-scroll:focus-visible { outline: 2px solid #386957; outline-offset: 3px; }
+.topic-graph-scroll-hint { display: none; }
+@media (max-width: 600px) {
+  .topic-graph-scroll-hint { display: block; margin: 0 0 8px; font-size: 12px; line-height: 1.6; }
+}

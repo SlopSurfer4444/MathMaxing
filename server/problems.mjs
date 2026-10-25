@@ -1,4 +1,7 @@
+import { topicProblems, publicTopicProblem, topicPackages } from './topic-packs.mjs'
 import { generateProblem, problemFromGeneratedId } from './generators.mjs'
+import { percentageProblems, publicPercentageProblem } from './percentages.mjs'
+import { percentageVariantFromId } from './percentage-variants.mjs'
 export const problems = [
   { id: 'double-angle-cos', title: 'Уравнения · Вариант 1', equation: '\\sin 2x=\\cos x', interval: 'x\\in\\left[-\\frac{\\pi}{2};\\frac{3\\pi}{2}\\right]', description: 'Реши уравнение и отбери корни на отрезке.', skills: ['Формула двойного угла', 'Нулевое произведение', 'Отбор корней'], roots: ['-1/2','1/6','1/2','5/6','3/2'], solution: 'sin 2x=2 sin x cos x. cos x(2 sin x-1)=0. cos x=0 или sin x=1/2. На отрезке корни -π/2, π/6, π/2, 5π/6, 3π/2.' },
   { id: 'double-angle-sin', title: 'Уравнения · Вариант 2', equation: '\\sin 2x=\\sin x', interval: 'x\\in[-\\pi;\\pi]', description: 'Реши уравнение и отбери корни на отрезке.', skills: ['Формула двойного угла', 'Нулевое произведение', 'Отбор корней'], roots: ['-1','-1/3','0','1/3','1'], solution: 'sin x(2 cos x-1)=0. sin x=0 или cos x=1/2. На отрезке корни -π, -π/3, 0, π/3, π.' },
@@ -16,9 +19,11 @@ const authoredSeries = {
   'cos-double-negative-sin':[{a:'1/2',d:'2'},{a:'-1/6',d:'2'},{a:'7/6',d:'2'}],
 }
 for(const problem of problems)problem.series=authoredSeries[problem.id]
-export function publicProblem(value) { const p=typeof value==='string'?getProblem(value):value; return {id:p.id,title:p.title,equation:p.equation,interval:p.interval,description:p.description,skills:[]} }
+export function publicProblem(value) { const p=typeof value==='string'?getProblem(value):value; if(topicPackages.some(pack=>pack.id===p.packageId))return publicTopicProblem(p); if(p.kind==='numeric')return publicPercentageProblem(p);return {id:p.id,title:p.title,equation:p.equation,interval:p.interval,description:p.description,skills:[]} }
 export const publicProblems = problems.map(publicProblem)
-export function getProblem(id) { const p = problems.find(p => p.id === id) ?? problemFromGeneratedId(id); if (!p) throw new Error('Неизвестная задача'); return p }
+export function getProblem(id) { const p = problems.find(p => p.id === id) ?? percentageProblems.find(p=>p.id===id) ?? topicProblems.find(p=>p.id===id) ?? problemFromGeneratedId(id) ?? percentageVariantFromId(id); if (!p) throw new Error('Неизвестная задача'); return p }
+export function nextPercentageProblem(work) { const index=percentageProblems.findIndex(p=>p.id===work?.problemId);return percentageProblems[(index+1)%percentageProblems.length] }
+export function firstPercentageProblem(){return percentageProblems[0]}
 export function blankDocument() { return { type:'doc', content:[{type:'paragraph', attrs:{id:crypto.randomUUID()}}] } }
 
 // Canonicalize only our finite templates, using their exact construction data.
@@ -87,3 +92,7 @@ export function nextProblem(work, history=[], allowedFamilies=['G1']) {
   }
   throw Error('Новые варианты этого набора закончились. Можно повторить прежний вариант.')
 }
+
+export const taskPackages=[{id:'percentages',title:'Проценты',description:'Часть целого, изменение и сравнение величин.'},{id:'trigonometry',title:'Тригонометрия',description:'Уравнения и отбор корней.'},...topicPackages]
+export function packageProblems(packageId){return packageId==='percentages'?percentageProblems:packageId==='trigonometry'?problems:topicProblems.filter(p=>p.packageId===packageId)}
+export function nextPackageProblem(work){const generated=percentageVariantFromId(work.problemId);if(generated){const source=percentageProblems.findIndex(p=>p.id===generated.generation.sourceProblemId);return percentageProblems[(source+1)%percentageProblems.length]}const items=packageProblems(work.packageId??getProblem(work.problemId).packageId);if(!items.length)throw Error('Неизвестный раздел');return items[(items.findIndex(p=>p.id===work.problemId)+1)%items.length]}
